@@ -1,6 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from prisma import Prisma
-from typing import List
+from typing import List, Optional
 from app.models import UserCreate, UserUpdate, UserResponse, ItemResponse, ContactCreate, ContactResponse
 from app.prisma_client import PrismaClient
 import base64
@@ -82,66 +82,110 @@ async def delete_user(
 
 @router.post("/items", response_model=ItemResponse)
 async def create_item(
-    category: str,
-    type: str,
-    brand: str,
-    size: str,
-    color: str,
-    userId: str,
+    category: str = Form(...),
+    type: str = Form(...),
+    brand: str = Form(...),
+    size: str = Form(...),
+    color: str = Form(...),
+    userId: str = Form(...),
+    image: Optional[UploadFile] = File(default=None),
     db: Prisma = Depends(get_prisma)
 ):
     user = await db.user.find_unique(where={"id": userId})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    created_item = await db.item.create(
-        data={
-            "category": category,
-            "type": type,
-            "brand": brand,
-            "size": size,
-            "color": color,
-            "userId": userId
-        }
-    )
+    image_data = None
+    if image and image.file and image.size > 0:
+        raw_bytes = await image.read()
+        image_data = base64.b64encode(raw_bytes).decode("utf-8")
 
-    return created_item
+    data = {
+        "category": category,
+        "type": type,
+        "brand": brand,
+        "size": size,
+        "color": color,
+        "userId": userId,
+        "image": image_data
+    }
+
+    try:
+        created_item = await db.item.create(data=data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create item: {str(e)}")
+
+    response = {
+        "id": created_item.id,
+        "category": created_item.category,
+        "type": created_item.type,
+        "brand": created_item.brand,
+        "size": created_item.size,
+        "color": created_item.color,
+        "userId": created_item.userId,
+        "image": f"data:image/jpeg;base64,{created_item.image}" if created_item.image else None
+    }
+    return response
 
 
 @router.get("/items", response_model=List[ItemResponse])
-async def get_items(
-    db: Prisma = Depends(get_prisma)
-):
+async def get_items(db: Prisma = Depends(get_prisma)):
     items = await db.item.find_many()
-    return items
+    result = []
+    for item in items:
+        item_dict = {
+            "id": item.id,
+            "category": item.category,
+            "type": item.type,
+            "brand": item.brand,
+            "size": item.size,
+            "color": item.color,
+            "userId": item.userId,
+            "image": f"data:image/jpeg;base64,{item.image}" if item.image else None
+        }
+        result.append(item_dict)
+    return result
 
 
 @router.get("/items/{item_id}", response_model=ItemResponse)
-async def get_item(
-    item_id: str,
-    db: Prisma = Depends(get_prisma)
-):
+async def get_item(item_id: str, db: Prisma = Depends(get_prisma)):
     item = await db.item.find_unique(where={"id": item_id})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
-    return item
+    response = {
+        "id": item.id,
+        "category": item.category,
+        "type": item.type,
+        "brand": item.brand,
+        "size": item.size,
+        "color": item.color,
+        "userId": item.userId,
+        "image": f"data:image/jpeg;base64,{item.image}" if item.image else None
+    }
+    return response
 
 
 @router.put("/items/{item_id}", response_model=ItemResponse)
 async def update_item(
     item_id: str,
-    category: str,
-    type: str,
-    brand: str,
-    size: str,
-    color: str,
+    category: str = Form(...),
+    type: str = Form(...),
+    brand: str = Form(...),
+    size: str = Form(...),
+    color: str = Form(...),
+    userId: str = Form(...),
+    image: Optional[UploadFile] = File(default=None),
     db: Prisma = Depends(get_prisma)
 ):
     existing_item = await db.item.find_unique(where={"id": item_id})
     if not existing_item:
         raise HTTPException(status_code=404, detail="Item not found")
     
+    image_data = existing_item.image
+    if image and image.file and image.size > 0:
+        raw_bytes = await image.read()
+        image_data = base64.b64encode(raw_bytes).decode("utf-8")
+
     updated_item = await db.item.update(
         where={"id": item_id},
         data={
@@ -150,23 +194,42 @@ async def update_item(
             "brand": brand,
             "size": size,
             "color": color,
+            "image": image_data
         }
     )
 
-    return updated_item
+    response = {
+        "id": updated_item.id,
+        "category": updated_item.category,
+        "type": updated_item.type,
+        "brand": updated_item.brand,
+        "size": updated_item.size,
+        "color": updated_item.color,
+        "userId": updated_item.userId,
+        "image": f"data:image/jpeg;base64,{updated_item.image}" if updated_item.image else None
+    }
+    return response
 
 
 @router.delete("/items/{item_id}", response_model=ItemResponse)
-async def delete_item(
-    item_id: str,
-    db: Prisma = Depends(get_prisma)
-):
+async def delete_item(item_id: str, db: Prisma = Depends(get_prisma)):
     existing_item = await db.item.find_unique(where={"id": item_id})
     if not existing_item:
         raise HTTPException(status_code=404, detail="Item not found")
     
     deleted_item = await db.item.delete(where={"id": item_id})
-    return deleted_item
+    
+    response = {
+        "id": deleted_item.id,
+        "category": deleted_item.category,
+        "type": deleted_item.type,
+        "brand": deleted_item.brand,
+        "size": deleted_item.size,
+        "color": deleted_item.color,
+        "userId": deleted_item.userId,
+        "image": f"data:image/jpeg;base64,{deleted_item.image}" if deleted_item.image else None
+    }
+    return response
 
 
 @router.get("/users/{user_id}/items", response_model=List[ItemResponse])

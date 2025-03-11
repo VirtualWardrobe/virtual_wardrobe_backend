@@ -31,6 +31,7 @@ model Item {
   brand    String
   size     String
   color    String
+  image    String?
   userId   String
   user     User    @relation(fields: [userId], references: [id])
 }

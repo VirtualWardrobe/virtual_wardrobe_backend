@@ -38,6 +38,10 @@ class ItemResponse(BaseModel):
     size: str
     color: str
     userId: str
+    image: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 class ContactCreate(BaseModel):
     name: Optional[str] = None
