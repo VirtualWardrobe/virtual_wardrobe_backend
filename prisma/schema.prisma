@@ -16,8 +16,8 @@ datasource db {
 
 model User {
   id       String  @id @default(uuid())
-  fname    String
-  lname    String
+  fname    String?
+  lname    String?
   email    String  @unique
   username String  @unique
   password String
@@ -25,13 +25,19 @@ model User {
 }
 
 model Item {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   category String
   type     String
   brand    String
   size     String
   color    String
-  image    Bytes
   userId   String
-  user     User   @relation(fields: [userId], references: [id])
+  user     User    @relation(fields: [userId], references: [id])
+}
+
+model Contact {
+  id      String   @id @default(uuid())
+  name    String?
+  email   String
+  message String
 }

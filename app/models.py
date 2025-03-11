@@ -8,6 +8,13 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
+class UserUpdate(BaseModel):
+    fname: Optional[str] = None
+    lname: Optional[str] = None
+    email: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+
 class UserResponse(BaseModel):
     id: str
     fname: str
@@ -30,5 +37,14 @@ class ItemResponse(BaseModel):
     brand: str
     size: str
     color: str
-    image: Optional[str]
     userId: str
+
+class ContactCreate(BaseModel):
+    name: Optional[str] = None
+    email: str
+    message: str
+
+class ContactResponse(BaseModel):
+    name: Optional[str] = None
+    email: str
+    message: str
