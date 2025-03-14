@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from app.routes import router as api_router
+from app.contacts.routes import router as contact_router
+from app.items.routes import router as item_router
+from app.users.routes import router as user_router
 from contextlib import asynccontextmanager
 from app.prisma_client import PrismaClient
 
@@ -15,7 +17,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(api_router, prefix="/api")
+app.include_router(user_router, prefix="/api", tags=["Users"])
+app.include_router(item_router, prefix="/api", tags=["Items"])
+app.include_router(contact_router, prefix="/api", tags=["Contacts"])
 
 @app.get("/")
 async def root():
