@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider  = "prisma-client-py"
-  interface = "asyncio"
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
 }
 
 datasource db {
@@ -37,7 +38,7 @@ model Item {
 }
 
 model Contact {
-  id      String   @id @default(uuid())
+  id      String  @id @default(uuid())
   name    String?
   email   String
   message String
