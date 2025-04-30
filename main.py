@@ -1,12 +1,16 @@
 from fastapi import FastAPI
-from app.contacts.routes import router as contact_router
-from app.items.routes import router as item_router
-from app.users.routes import router as user_router
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1.user.auth.routes.user import router as user_auth_router
+from app.api.v1.user.auth.routes.google_auth import router as google_auth_router
+from app.api.v1.user.info.routes import router as user_info_router
+from app.api.v1.wardrobe_items.routes import router as item_router
+from app.api.v1.contacts.routes import router as contact_router
 from contextlib import asynccontextmanager
-from app.prisma_client import PrismaClient
+from app.db.prisma_client import PrismaClient
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await PrismaClient.get_instance()
     yield
     await PrismaClient.close_connection()
 
@@ -17,9 +21,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(user_router, prefix="/api", tags=["Users"])
-app.include_router(item_router, prefix="/api", tags=["Items"])
-app.include_router(contact_router, prefix="/api", tags=["Contacts"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="http://127.0.0.1:5500",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(user_auth_router, prefix="/api/v1", tags=["User Authentication"])
+app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Authentication"])
+app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
+app.include_router(item_router, prefix="/api/v1", tags=["Items"])
+app.include_router(contact_router, prefix="/api/v1", tags=["Contacts"])
 
 @app.get("/")
 async def root():

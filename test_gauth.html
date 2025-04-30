@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Google Auth Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        #status {
+            margin-top: 20px;
+            color: green;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Google Authentication Test</h1>
+    <button id="login">Login with Google</button>
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('login').addEventListener('click', async () => {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/v1/google/login');
+                const data = await res.json();
+
+                if (data.success && data.data && data.data.google_auth_url) {
+                    sessionStorage.setItem('authFlow', 'started');
+                    window.location.href = data.data.google_auth_url;
+                } else {
+                    document.getElementById('status').innerText = "Failed to get Google auth URL.";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status').innerText = "Error requesting login URL.";
+            }
+        });
+
+        window.onload = () => {
+            // 🔄 Clear all session data on reload
+            if (performance.navigation.type === 1) {  // 1 = reload
+                sessionStorage.clear();
+                document.getElementById('status').innerText = "";
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('access_token');
+            const success = urlParams.get('success');
+
+            if (success === 'true' && accessToken) {
+                sessionStorage.setItem('access_token', accessToken);
+                sessionStorage.setItem('authenticated', 'true');
+                window.location.href = 'http://127.0.0.1:5500/test_gauth.html';
+                return;
+            }
+
+            const storedToken = sessionStorage.getItem('access_token');
+            const isAuthenticated = sessionStorage.getItem('authenticated') === 'true';
+
+            if (isAuthenticated && storedToken) {
+                document.getElementById('status').innerText =
+                    "✅ Authenticated!\n\nAccess Token:\n" + storedToken;
+            } else if (sessionStorage.getItem('authFlow')) {
+                document.getElementById('status').innerText = "❌ Authentication failed or was cancelled.";
+                sessionStorage.removeItem('authFlow');
+            }
+        };
+
+    </script>
+</body>
+
+</html>

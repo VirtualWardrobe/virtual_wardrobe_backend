@@ -1,0 +1,114 @@
+import httpx
+import logging
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
+from urllib.parse import urlencode
+from app.utils.success_handler import success_response
+from app.db.prisma_client import PrismaClient
+from typing import Optional
+from app.api.v1.user.auth.routes.user import create_access_token
+from env import env
+
+router = APIRouter()
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+@router.get("/google/login")
+async def google_login():
+    try:
+        params = {
+            "client_id": env.GOOGLE_CLIENT_ID,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "redirect_uri": env.GOOGLE_REDIRECT_URI,
+            "prompt": "select_account"
+        }
+        url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
+        return success_response(message="Redirecting to Google login", data={"google_auth_url": url})
+
+    except HTTPException as he:
+        logging.error(he)
+        raise he
+    
+    except Exception as e:
+        error_code = getattr(e, 'code', 500)
+        error_code = getattr(e, 'status_code', error_code)
+        
+        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
+        
+        raise HTTPException(
+            status_code=error_code,
+            detail=str(e)
+        )
+
+
+@router.get("/google/callback")
+async def google_callback(code: Optional[str] = None, error: Optional[str] = None):
+    try:
+        if error or not code:
+            redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
+            return RedirectResponse(url=redirect_url)
+
+        data = {
+            "code": code,
+            "client_id": env.GOOGLE_CLIENT_ID,
+            "client_secret": env.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": env.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(GOOGLE_TOKEN_URL, data=data)
+        
+        if not response.status_code == 200:
+            redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
+            return RedirectResponse(url=redirect_url)
+
+        access_token = response.json().get("access_token")
+
+        async with httpx.AsyncClient() as client:
+            user_info_response = await client.get(
+                GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+
+        if not user_info_response.status_code == 200:
+            redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
+            return RedirectResponse(url=redirect_url)
+
+        user_info = user_info_response.json()
+
+        prisma = await PrismaClient.get_instance()
+
+        user_exist = await prisma.user.find_first(where={"email":user_info['email']})
+
+        if not user_exist:
+            user_exist = await prisma.user.create(data={
+                "name": user_info['name'],
+                "email":user_info['email'],
+                "is_email_verified" : True,
+                "is_google_verified" : True
+            })
+
+        access_token = create_access_token(data={"email":user_exist.email, "id":user_exist.id})
+        
+        # send to front-end url the access_token
+        redirect_url = str(env.FRONT_END_RESPONSE_URI) +'?'+ str(urlencode({
+            'success': 'true',
+            'access_token': access_token
+        }))
+        return RedirectResponse(url=redirect_url)
+
+
+    except httpx.HTTPStatusError as e:
+        # Handle specific HTTP errors
+        logging.error(e)
+        redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
+        return RedirectResponse(url=redirect_url)
+    
+    except Exception as e:
+        logging.error(e)
+        redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
+        return RedirectResponse(url=redirect_url)

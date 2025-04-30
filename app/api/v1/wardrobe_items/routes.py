@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from prisma import Prisma
 from typing import List
-from app.items.models import ItemCreate, ItemUpdate, ItemResponse
-from app.prisma_client import PrismaClient
+from app.api.v1.wardrobe_items.models import ItemCreate, ItemResponse, ItemUpdate
+from app.db.prisma_client import PrismaClient
+import logging
 
 
 router = APIRouter()
@@ -18,17 +19,29 @@ async def create_items(
     items: List[ItemCreate],
     db: Prisma = Depends(get_prisma)
 ):
-    created_items = await db.item.create_many(
-        data=[item.model_dump(exclude_unset=True) for item in items]
-    )
-    
-    if created_items:
+    try:
+        items_data = []
+        for item in items:
+            data = item.model_dump(exclude_unset=True)
+            items_data.append(data)
+
+        created_items = await db.item.create_many(
+            data=items_data
+        )
+        
         return {
             "success": True,
-            "message": f"{created_items} items created successfully"
+            "count": created_items,
+            "items": items_data
         }
-    else:
-        raise HTTPException(status_code=400, detail="Failed to create items")
+    
+    except HTTPException as httpx:
+        logging.error(httpx)
+        raise httpx
+    
+    except Exception as e:
+        logging.error(f"Error creating items: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/items", response_model=List[ItemResponse])
