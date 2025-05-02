@@ -10,14 +10,9 @@ import logging
 router = APIRouter()
 
 
-async def get_prisma():
-    prisma = await PrismaClient.get_instance()
-    return prisma
-
-
 @router.get("/user", status_code=status.HTTP_200_OK)
 async def get_user_info(
-    prisma: Prisma = Depends(get_prisma),
+    prisma: Prisma = Depends(PrismaClient.get_instance),
     current_user = Depends(get_current_user)
 ):
     try:        
@@ -49,7 +44,7 @@ async def get_user_info(
 @router.patch("/user", status_code=status.HTTP_200_OK)
 async def update_user(
     request : UpdateUserInfo,
-    prisma: Prisma = Depends(get_prisma),
+    prisma: Prisma = Depends(PrismaClient.get_instance),
     current_user = Depends(get_current_user)
 ):
     try:        
@@ -88,7 +83,7 @@ async def update_user(
 
 @router.delete("/user", status_code=status.HTTP_200_OK)
 async def delete_user(
-    prisma: Prisma = Depends(get_prisma),
+    prisma: Prisma = Depends(PrismaClient.get_instance),
     current_user = Depends(get_current_user)
 ):
     try:        
@@ -118,7 +113,7 @@ async def delete_user(
 @router.get("/search", status_code=status.HTTP_200_OK)
 async def search_users(
     email: str,
-    prisma: Prisma = Depends(get_prisma)
+    prisma: Prisma = Depends(PrismaClient.get_instance),
 ):
     try:        
         users = await prisma.user.find_many(

@@ -9,15 +9,10 @@ import logging
 router = APIRouter()
 
 
-async def get_prisma():
-    prisma = await PrismaClient.get_instance()
-    return prisma
-
-
 @router.post("/items")
 async def create_items(
     items: List[ItemCreate],
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     try:
         items_data = []
@@ -46,7 +41,7 @@ async def create_items(
 
 @router.get("/items", response_model=List[ItemResponse])
 async def get_items(
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     items = await db.item.find_many()
     return items
@@ -55,7 +50,7 @@ async def get_items(
 @router.get("/items/{item_id}", response_model=ItemResponse)
 async def get_item(
     item_id: str,
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     item = await db.item.find_unique(where={"id": item_id})
     if not item:
@@ -67,7 +62,7 @@ async def get_item(
 async def update_item(
     item_id: str,
     item: ItemUpdate,
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     existing_item = await db.item.find_unique(where={"id": item_id})
     if not existing_item:
@@ -83,7 +78,7 @@ async def update_item(
 @router.delete("/items/{item_id}", response_model=ItemResponse)
 async def delete_item(
     item_id: str,
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     existing_item = await db.item.find_unique(where={"id": item_id})
     if not existing_item:
@@ -93,10 +88,10 @@ async def delete_item(
     return deleted_item
 
 
-@router.get("/users/{user_id}/items", response_model=List[ItemResponse])
+@router.get("/items/by-user/{user_id}", response_model=List[ItemResponse])
 async def get_user_items(
     user_id: str,
-    db: Prisma = Depends(get_prisma)
+    db: Prisma = Depends(PrismaClient.get_instance)
 ):
     items = await db.item.find_many(where={"userId": user_id})
     return items

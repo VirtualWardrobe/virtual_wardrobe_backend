@@ -9,15 +9,10 @@ from app.db.prisma_client import PrismaClient
 router = APIRouter()
 
 
-async def get_prisma():
-    prisma = await PrismaClient.get_instance()
-    return prisma
-
-
 @router.post("/contacts", response_model=ContactCreate)
 async def create_contact(
     contact: ContactCreate,
-    db: Prisma = Depends(get_prisma),
+    db: Prisma = Depends(PrismaClient.get_instance),
     user = Depends(get_current_user)
 ):
     created_contact = await db.contact.create(
@@ -30,7 +25,7 @@ async def create_contact(
 
 @router.get("/contacts", response_model=List[ContactResponse])
 async def get_contacts(
-    db: Prisma = Depends(get_prisma),
+    db: Prisma = Depends(PrismaClient.get_instance),
     user = Depends(get_current_user)
 ):
     contacts = await db.contact.find_many()

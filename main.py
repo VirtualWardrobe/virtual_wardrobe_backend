@@ -29,8 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user_auth_router, prefix="/api/v1", tags=["User Authentication"])
-app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Authentication"])
+app.include_router(user_auth_router, prefix="/api/v1", tags=["User Auth"])
+app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Auth"])
 app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
 app.include_router(item_router, prefix="/api/v1", tags=["Items"])
 app.include_router(contact_router, prefix="/api/v1", tags=["Contacts"])
