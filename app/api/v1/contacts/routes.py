@@ -1,32 +1,80 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Optional
 from prisma import Prisma
-from typing import List
-from app.api.v1.contacts.models import ContactCreate, ContactResponse
+from app.api.v1.contacts.models import Contact
 from app.api.v1.user.auth.routes.user import get_current_user
+from app.utils.success_handler import success_response
 from app.db.prisma_client import PrismaClient
+import logging, math
 
 
 router = APIRouter()
 
 
-@router.post("/contacts", response_model=ContactCreate)
+@router.post("/contacts")
 async def create_contact(
-    contact: ContactCreate,
-    db: Prisma = Depends(PrismaClient.get_instance),
+    contact: Contact,
+    prisma: Prisma = Depends(PrismaClient.get_instance),
     user = Depends(get_current_user)
 ):
-    created_contact = await db.contact.create(
-        data=contact.model_dump(exclude_unset=True)
-    )
-    if not created_contact:
-        raise HTTPException(status_code=400, detail="Failed to create contact")
-    return created_contact
+    try:
+        data = contact.model_dump(exclude_unset=True)
+
+        created_contact = await prisma.contact.create(
+            data=data
+        )
+
+        return success_response(
+            message="Message sent successfully",
+            data=created_contact
+        )
+    
+    except HTTPException as httpx:
+        logging.error(httpx)
+        raise httpx
+
+    except Exception as e:
+        logging.error(f"Error in sending message: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/contacts", response_model=List[ContactResponse])
+@router.get("/contacts")
 async def get_contacts(
-    db: Prisma = Depends(PrismaClient.get_instance),
+    prisma: Prisma = Depends(PrismaClient.get_instance),
+    page: Optional[int] = Query(1, ge=1),
+    page_size: Optional[int] = Query(10, ge=1, le=100),
     user = Depends(get_current_user)
 ):
-    contacts = await db.contact.find_many()
-    return contacts
+    try:
+        skip = (page - 1) * page_size
+        
+        contacts = await prisma.contact.find_many(
+            skip=skip,
+            take=page_size
+        )
+        
+        total_count = await prisma.contact.count()
+        total_pages = math.ceil(total_count / page_size)
+        
+        return success_response(
+            message="Messages retrieved successfully",
+            data={
+                "items": contacts,
+                "metadata": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total_items": total_count,
+                    "total_pages": total_pages,
+                    "has_next": page < total_pages,
+                    "has_previous": page > 1
+                }
+            }
+        )
+    
+    except HTTPException as httpx:
+        logging.error(httpx)
+        raise httpx
+
+    except Exception as e:
+        logging.error(f"Error in retrieving messages: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

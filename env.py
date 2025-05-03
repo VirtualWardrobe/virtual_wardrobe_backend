@@ -11,6 +11,13 @@ class Environment:
     GOOGLE_CLIENT_SECRET:str=os.getenv("VW_GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI:str=os.getenv("VW_GOOGLE_REDIRECT_URI")
     FRONT_END_RESPONSE_URI:str=os.getenv("VW_FRONT_END_RESPONSE_URI")
+    GOOGLE_STORAGE_MEDIA_BUCKET:str=os.getenv("VW_GOOGLE_STORAGE_MEDIA_BUCKET")
+    GCP_PROJECT_ID:str=os.getenv("VW_GCP_PROJECT_ID")
+    GCP_PRIVATE_KEY_ID:str=os.getenv("VW_GCP_PRIVATE_KEY_ID")
+    GCP_PRIVATE_KEY:str=os.getenv("VW_GCP_PRIVATE_KEY")
+    GCP_CLIENT_EMAIL:str=os.getenv("VW_GCP_CLIENT_EMAIL")
+    GCP_CLIENT_ID:str=os.getenv("VW_GCP_CLIENT_ID")
+    GCP_CLIENT_X509_CERT_URL:str=os.getenv("VW_GCP_CLIENT_X509_CERT_URL")
 
     @classmethod
     def to_dict(cls):
