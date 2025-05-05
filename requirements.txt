@@ -12,3 +12,4 @@ APScheduler
 slowapi
 bcrypt
 google-cloud-storage
+fal-client

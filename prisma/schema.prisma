@@ -27,6 +27,7 @@ model User {
   updated_at         DateTime          @updatedAt
   items              WardrobeItem[]
   SocialMediaAuth    SocialMediaAuth[]
+  VirtualTryOn       VirtualTryOn[]
 }
 
 model SocialMediaAuth {
@@ -74,9 +75,29 @@ model Contact {
   updated_at DateTime @updatedAt
 }
 
+model VirtualTryOn {
+  id                String    @id @default(uuid())
+  user_id           String
+  human_image_url   String
+  garment_image_url String
+  cloth_type        ClothType
+  result_image_url  String
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  user              User      @relation(fields: [user_id], references: [id])
+}
+
 enum Role {
   USER
   ADMIN
+}
+
+enum ClothType {
+  UPPER
+  LOWER
+  OVERALL
+  INNER
+  OUTER
 }
 
 enum ItemCategory {
