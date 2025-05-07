@@ -18,6 +18,9 @@ class Environment:
     GCP_CLIENT_EMAIL:str=os.getenv("VW_GCP_CLIENT_EMAIL")
     GCP_CLIENT_ID:str=os.getenv("VW_GCP_CLIENT_ID")
     GCP_CLIENT_X509_CERT_URL:str=os.getenv("VW_GCP_CLIENT_X509_CERT_URL")
+    REDIS_HOST:str=os.getenv("VW_REDIS_HOST")
+    REDIS_PORT:str=os.getenv("VW_REDIS_PORT")
+    REDIS_PASSWORD:str=os.getenv("VW_REDIS_PASSWORD")
 
     @classmethod
     def to_dict(cls):

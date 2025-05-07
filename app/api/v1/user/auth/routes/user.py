@@ -1,10 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from passlib.context import CryptContext
-from app.db.prisma_client import PrismaClient
+from app.db.prisma_client import get_prisma
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from jose import jwt, JWTError, ExpiredSignatureError
-from app.db.prisma_client import PrismaClient
 from app.api.v1.user.auth.models.user import Register, OTPVerify, Login, ResetPassword
 from app.api.v1.user.auth.mails.templates import sign_up_template, forgot_password_template
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -66,7 +65,7 @@ router = APIRouter()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:
         token = credentials.credentials
@@ -127,7 +126,7 @@ async def get_current_admin(current_user=Depends(get_current_user)):
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     request: Register,
-    prisma: Prisma =  Depends(PrismaClient.get_instance)
+    prisma: Prisma =  Depends(get_prisma)
 ):
     try:        
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:
@@ -179,7 +178,7 @@ async def register(
 @router.put("/verify/otp", status_code=status.HTTP_200_OK)
 async def verify_otp(
     request: OTPVerify,
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:   
@@ -224,7 +223,7 @@ async def verify_otp(
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(
     request: Login,
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:        
         user = await prisma.user.find_first(where={"email":request.email, "is_deleted":False})
@@ -262,7 +261,7 @@ async def login(
 @router.post("/refresh-token", status_code=status.HTTP_200_OK)
 async def refresh_token(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:
         token = credentials.credentials
@@ -323,7 +322,7 @@ async def refresh_token(
 @router.post("/forgot-password/{email}", status_code=status.HTTP_200_OK)
 async def forgot_password(
     email: str,
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:
@@ -371,7 +370,7 @@ async def forgot_password(
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 async def reset_password(
     request: ResetPassword,
-    prisma: Prisma = Depends(PrismaClient.get_instance)
+    prisma: Prisma = Depends(get_prisma)
 ):
     try:       
        async with prisma.tx(timeout=65000,max_wait=80000) as tx:

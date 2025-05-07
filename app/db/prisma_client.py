@@ -16,3 +16,8 @@ class PrismaClient:
         if PrismaClient._instance is not None:
             await PrismaClient._instance.disconnect()
             PrismaClient._instance = None
+
+async def get_prisma():
+    """Get Prisma client instance"""
+    client = await PrismaClient.get_instance()
+    return client

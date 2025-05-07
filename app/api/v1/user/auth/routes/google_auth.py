@@ -4,16 +4,19 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 from app.utils.success_handler import success_response
-from app.db.prisma_client import PrismaClient
+from app.db.prisma_client import get_prisma
 from typing import Optional
 from app.api.v1.user.auth.routes.user import create_access_token
 from env import env
 
+
 router = APIRouter()
+
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
 
 @router.get("/google/login")
 async def google_login():
@@ -80,7 +83,7 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
 
         user_info = user_info_response.json()
 
-        prisma = await PrismaClient.get_instance()
+        prisma = await get_prisma()
 
         user_exist = await prisma.user.find_first(where={"email":user_info['email']})
 

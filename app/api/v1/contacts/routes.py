@@ -4,7 +4,7 @@ from prisma import Prisma
 from app.api.v1.contacts.models import Contact
 from app.api.v1.user.auth.routes.user import get_current_user
 from app.utils.success_handler import success_response
-from app.db.prisma_client import PrismaClient
+from app.db.prisma_client import get_prisma
 import logging, math
 
 
@@ -14,7 +14,7 @@ router = APIRouter()
 @router.post("/contacts")
 async def create_contact(
     contact: Contact,
-    prisma: Prisma = Depends(PrismaClient.get_instance),
+    prisma: Prisma = Depends(get_prisma),
     user = Depends(get_current_user)
 ):
     try:
@@ -40,7 +40,7 @@ async def create_contact(
 
 @router.get("/contacts")
 async def get_contacts(
-    prisma: Prisma = Depends(PrismaClient.get_instance),
+    prisma: Prisma = Depends(get_prisma),
     page: Optional[int] = Query(1, ge=1),
     page_size: Optional[int] = Query(10, ge=1, le=100),
     user = Depends(get_current_user)
