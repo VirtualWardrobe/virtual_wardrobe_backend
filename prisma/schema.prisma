@@ -28,6 +28,8 @@ model User {
   items              WardrobeItem[]
   SocialMediaAuth    SocialMediaAuth[]
   VirtualTryOn       VirtualTryOn[]
+
+  @@index([id, is_deleted], name: "user_id_is_deleted_index")
 }
 
 model SocialMediaAuth {
@@ -64,6 +66,9 @@ model WardrobeItem {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   user       User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], name: "wardrobe_item_user_id_index")
+  @@index([id, user_id], name: "wardrobe_item_id_user_id_index")
 }
 
 model Contact {
@@ -85,6 +90,9 @@ model VirtualTryOn {
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
   user              User      @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], name: "virtual_try_on_user_id_index")
+  @@index([id, user_id], name: "virtual_try_on_id_user_id_index")
 }
 
 enum Role {
