@@ -41,7 +41,7 @@ model SocialMediaAuth {
   access_token   String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
-  User           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model OtpSession {
@@ -58,11 +58,11 @@ model OtpSession {
 model WardrobeItem {
   id         String   @id @default(uuid())
   user_id    String
-  category   String
-  type       String?
+  category   ItemCategory
+  type       ItemType?
   brand      String?
-  size       String?
-  color      String?
+  size       Size?
+  color      Color?
   image_url  String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
