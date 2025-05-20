@@ -22,42 +22,42 @@
 
 ## 🛠️ Technical Enhancements
 
-### ⚙️ FastAPI over Django
+### FastAPI over Django
 
 - Transitioned to FastAPI for asynchronous processing and real-time interactions.
 - Provides automatic OpenAPI documentation and faster response handling.
 
-### 🧬 Prisma ORM over Django ORM
+### Prisma ORM over Django ORM
 
 - Type-safe queries and schema modeling.
 - Easier management of wardrobe data, user collections, and outfit combinations.
 
-### 🗃️ PostgreSQL + Neon Serverless
+### PostgreSQL + Neon Serverless
 
 - Upgraded from SQLite to PostgreSQL for better concurrency and scalability.
 - Added **Neon Serverless PostgreSQL** for dynamic auto-scaling and cost savings.
 
-### 🌩️ Redis Caching
+### Redis Caching
 
 - Integrated Redis to reduce database load and enhance outfit browsing speed.
 
-### 🌐 Cloud Infrastructure
+### Cloud Infrastructure
 
 - Moved deployment to **Google Cloud Platform**, utilizing:
 
   - Cloud VMs for scalable compute resources.
   - Cloud Storage for reliable image/media management.
 
-### 🔐 Scalable Authentication
+### Scalable Authentication
 
 - Migrated from Django's session-based auth to **JWT** for stateless security.
 - Added **Google Authentication (OAuth 2.0)** for seamless login.
 
-### 🧪 Virtual Try-On
+### Virtual Try-On
 
 - Introduced real-time visualization of outfits to boost user engagement.
 
-### 🧠 Database Indexing
+### Database Indexing
 
 - Indexed critical tables (user data, outfits, clothing categories).
 - Improved performance for searches, recommendations, and history tracking.
@@ -74,11 +74,11 @@
 
 ## 📈 Project Outcomes
 
-- ⏱️ **40% faster API responses** with async processing and caching.
-- 📊 **Improved database performance** with Prisma & PostgreSQL.
-- 🌍 **Highly scalable cloud architecture** with GCP + Neon.
-- 🧥 **Immersive user experience** through Virtual Try-On.
-- 🔒 **Secure, scalable authentication** using JWT & Google SSO.
+- **40% faster API responses** with async processing and caching.
+- **Improved database performance** with Prisma & PostgreSQL.
+- **Highly scalable cloud architecture** with GCP + Neon.
+- **Immersive user experience** through Virtual Try-On.
+- **Secure, scalable authentication** using JWT & Google SSO.
 
 ---
 
@@ -95,7 +95,3 @@ Virtual Wardrobe empowers users to:
 ## 🔗 Connect
 
 If you're interested in exploring or contributing to the project, feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/anirudh248) or check out the codebase here on GitHub!
-
----
-
-Let me know if you'd like a badge section, setup instructions, or contribution guidelines included as well.
