@@ -94,7 +94,7 @@ Virtual Wardrobe empowers users to:
 
 ## 🔗 Connect
 
-If you're interested in exploring or contributing to the project, feel free to connect with me on [LinkedIn](www.linkedin.com/in/anirudh248) or check out the codebase here on GitHub!
+If you're interested in exploring or contributing to the project, feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/anirudh248) or check out the codebase here on GitHub!
 
 ---
 
