@@ -1,3 +1,4 @@
+import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,11 +11,18 @@ from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 from contextlib import asynccontextmanager
 from app.db.prisma_client import PrismaClient
 
+# Ensure the log directory exists
+log_dir = "/var/log/fastapi"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+
+log_file = os.path.join(log_dir, "app.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
     handlers=[
-        logging.FileHandler("/var/log/fastapi/app.log"),
+        logging.FileHandler(log_file),
         logging.StreamHandler()
     ]
 )
