@@ -8,6 +8,7 @@ from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 from contextlib import asynccontextmanager
 from app.db.prisma_client import PrismaClient
+import logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,3 +41,13 @@ app.include_router(virtual_tryon_router, prefix="/api/v1", tags=["Virtual Try-On
 @app.get("/")
 async def root():
     return {"message": "Welcome to the API"}
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.FileHandler("/var/log/fastapi/app.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("fastapi")
