@@ -11,22 +11,30 @@ from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 from contextlib import asynccontextmanager
 from app.db.prisma_client import PrismaClient
 
-# Ensure the log directory exists
+# Ensure the log directory exists with proper permissions
 log_dir = "/var/log/fastapi"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir, exist_ok=True)
+os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, "app.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
+# Configure logger explicitly
 logger = logging.getLogger("fastapi")
+logger.setLevel(logging.INFO)
+
+# To prevent duplicate handlers if this file is imported multiple times
+if not logger.hasHandlers():
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    file_handler.setFormatter(formatter)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,6 +43,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down Prisma client")
     await PrismaClient.close_connection()
+
 
 app = FastAPI(
     title="Virtual Wardrobe Backend",
@@ -58,6 +67,7 @@ app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
 app.include_router(item_router, prefix="/api/v1", tags=["Wardrobe Items"])
 app.include_router(contact_router, prefix="/api/v1", tags=["Contacts"])
 app.include_router(virtual_tryon_router, prefix="/api/v1", tags=["Virtual Try-On"])
+
 
 @app.get("/")
 async def root():
