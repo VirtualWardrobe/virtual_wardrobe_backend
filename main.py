@@ -1,4 +1,5 @@
-import logging
+import logging, os
+from logging.handlers import TimedRotatingFileHandler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -10,20 +11,36 @@ from app.api.v1.wardrobe_items.routes import router as item_router
 from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 
-LOG_PATH = "/var/log/fastapi/app.log"
+LOG_DIR = "/var/log/fastapi"
+LOG_PATH = os.path.join(LOG_DIR, "app.log")
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 
-file_handler = logging.FileHandler(LOG_PATH)
-file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+# Ensure log directory exists
+os.makedirs(LOG_DIR, exist_ok=True)
 
+# Set up timed rotating file handler: rotate daily, keep 7 backups
+file_handler = TimedRotatingFileHandler(
+    LOG_PATH,
+    when='midnight',
+    interval=1,
+    backupCount=7,
+    encoding='utf-8'
+)
+file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+file_handler.setLevel(logging.INFO)
+
+# Stream handler for console output
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+stream_handler.setLevel(logging.INFO)
 
+# Configure root logging
 logging.basicConfig(
     level=logging.INFO,
     handlers=[file_handler, stream_handler]
 )
 
+# Redirect uvicorn logs to the same handlers
 for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
     uvicorn_logger = logging.getLogger(logger_name)
     uvicorn_logger.handlers = [file_handler, stream_handler]
