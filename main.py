@@ -37,6 +37,7 @@ for uvicorn_logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
     uvicorn_logger.setLevel(logging.INFO)
     uvicorn_logger.addHandler(file_handler)
     uvicorn_logger.addHandler(stream_handler)
+    uvicorn_logger.propagate = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
