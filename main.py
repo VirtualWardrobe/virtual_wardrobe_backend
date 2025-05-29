@@ -10,15 +10,33 @@ from app.api.v1.wardrobe_items.routes import router as item_router
 from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 
+log_path = "/var/log/fastapi/app.log"
+
+# Create handlers once
+file_handler = logging.FileHandler(log_path)
+stream_handler = logging.StreamHandler()
+
+# Basic log format
+formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+
+# Configure root logger
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.FileHandler("/var/log/fastapi/app.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, stream_handler]
 )
+
+# Create your app-specific logger
 logger = logging.getLogger("fastapi")
+
+# Explicitly configure uvicorn loggers to use the same handlers
+for uvicorn_logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    uvicorn_logger = logging.getLogger(uvicorn_logger_name)
+    uvicorn_logger.handlers = []  # Clear existing handlers
+    uvicorn_logger.setLevel(logging.INFO)
+    uvicorn_logger.addHandler(file_handler)
+    uvicorn_logger.addHandler(stream_handler)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
