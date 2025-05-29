@@ -12,32 +12,29 @@ from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 
 log_path = "/var/log/fastapi/app.log"
 
-# Create handlers once
 file_handler = logging.FileHandler(log_path)
 stream_handler = logging.StreamHandler()
 
-# Basic log format
 formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 file_handler.setFormatter(formatter)
 stream_handler.setFormatter(formatter)
 
-# Configure root logger
 logging.basicConfig(
     level=logging.INFO,
     handlers=[file_handler, stream_handler]
 )
 
-# Create your app-specific logger
 logger = logging.getLogger("fastapi")
 
-# Explicitly configure uvicorn loggers to use the same handlers
-for uvicorn_logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
-    uvicorn_logger = logging.getLogger(uvicorn_logger_name)
-    uvicorn_logger.handlers = []  # Clear existing handlers
-    uvicorn_logger.setLevel(logging.INFO)
-    uvicorn_logger.addHandler(file_handler)
-    uvicorn_logger.addHandler(stream_handler)
-    uvicorn_logger.propagate = False
+loggers_to_configure = ["uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"]
+
+for logger_name in loggers_to_configure:
+    log = logging.getLogger(logger_name)
+    log.handlers = []
+    log.setLevel(logging.INFO)
+    log.addHandler(file_handler)
+    log.addHandler(stream_handler)
+    log.propagate = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,7 +59,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include all routers
 app.include_router(user_auth_router, prefix="/api/v1", tags=["User Auth"])
 app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Auth"])
 app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
