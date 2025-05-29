@@ -10,31 +10,15 @@ from app.api.v1.wardrobe_items.routes import router as item_router
 from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 
-log_path = "/var/log/fastapi/app.log"
-
-file_handler = logging.FileHandler(log_path)
-stream_handler = logging.StreamHandler()
-
-formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
-file_handler.setFormatter(formatter)
-stream_handler.setFormatter(formatter)
-
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[file_handler, stream_handler]
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.FileHandler("/var/log/fastapi/app.log"),
+        logging.StreamHandler()
+    ]
 )
-
-logger = logging.getLogger("fastapi")
-
-loggers_to_configure = ["uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"]
-
-for logger_name in loggers_to_configure:
-    log = logging.getLogger(logger_name)
-    log.handlers = []
-    log.setLevel(logging.INFO)
-    log.addHandler(file_handler)
-    log.addHandler(stream_handler)
-    log.propagate = False
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,6 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include all routers
 app.include_router(user_auth_router, prefix="/api/v1", tags=["User Auth"])
 app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Auth"])
 app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
