@@ -11,7 +11,7 @@ from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 
 LOG_PATH = "/var/log/fastapi/app.log"
-LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 
 file_handler = logging.FileHandler(LOG_PATH)
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
