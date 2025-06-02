@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.db.prisma_client import PrismaClient
+from app.redis.redis_client import redis_handler
 from app.api.v1.user.auth.routes.user import router as user_auth_router
 from app.api.v1.user.auth.routes.google_auth import router as google_auth_router
 from app.api.v1.user.info.routes import router as user_info_router
@@ -52,9 +53,13 @@ logger.info("Logging is set up correctly.")
 async def lifespan(app: FastAPI):
     logger.info("Starting Prisma client")
     await PrismaClient.get_instance()
+    logger.info("Starting Redis client")
+    await redis_handler.connect()
     yield
     logger.info("Shutting down Prisma client")
     await PrismaClient.close_connection()
+    logger.info("Shutting down Redis client")
+    await redis_handler.disconnect()
 
 app = FastAPI(
     title="Virtual Wardrobe Backend",
