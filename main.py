@@ -16,10 +16,8 @@ LOG_DIR = env.LOG_DIR
 LOG_PATH = os.path.join(LOG_DIR, "app.log")
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 
-# Ensure log directory exists
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# Set up timed rotating file handler: rotate daily, keep 7 backups
 file_handler = TimedRotatingFileHandler(
     LOG_PATH,
     when='midnight',
@@ -31,13 +29,23 @@ file_handler = TimedRotatingFileHandler(
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 file_handler.setLevel(logging.INFO)
 
-# Configure root logging
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+stream_handler.setLevel(logging.INFO)
+
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[file_handler]
+    handlers=[file_handler, stream_handler]
 )
 
 logger = logging.getLogger(__name__)
+
+for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+    uvicorn_logger = logging.getLogger(logger_name)
+    uvicorn_logger.addHandler(file_handler)
+    uvicorn_logger.setLevel(logging.INFO)
+    uvicorn_logger.propagate = False
+
 logger.info("Logging is set up correctly.")
 
 @asynccontextmanager
