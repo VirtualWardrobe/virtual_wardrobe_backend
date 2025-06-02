@@ -21,6 +21,7 @@ class Environment:
     REDIS_HOST:str=os.getenv("VW_REDIS_HOST")
     REDIS_PORT:str=os.getenv("VW_REDIS_PORT")
     REDIS_PASSWORD:str=os.getenv("VW_REDIS_PASSWORD")
+    LOG_DIR:str=os.getenv("VW_LOG_DIR")
 
     @classmethod
     def to_dict(cls):

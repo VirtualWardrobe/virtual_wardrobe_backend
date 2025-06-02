@@ -10,8 +10,9 @@ from app.api.v1.user.info.routes import router as user_info_router
 from app.api.v1.wardrobe_items.routes import router as item_router
 from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
+from env import env
 
-LOG_DIR = "/var/log/fastapi"
+LOG_DIR = env.LOG_DIR
 LOG_PATH = os.path.join(LOG_DIR, "app.log")
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 
@@ -26,26 +27,15 @@ file_handler = TimedRotatingFileHandler(
     backupCount=7,
     encoding='utf-8'
 )
+
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 file_handler.setLevel(logging.INFO)
-
-# Stream handler for console output
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-stream_handler.setLevel(logging.INFO)
 
 # Configure root logging
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[file_handler, stream_handler]
+    handlers=[file_handler]
 )
-
-# Redirect uvicorn logs to the same handlers
-for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
-    uvicorn_logger = logging.getLogger(logger_name)
-    uvicorn_logger.handlers = [file_handler, stream_handler]
-    uvicorn_logger.setLevel(logging.INFO)
-    uvicorn_logger.propagate = False
 
 logger = logging.getLogger(__name__)
 logger.info("Logging is set up correctly.")

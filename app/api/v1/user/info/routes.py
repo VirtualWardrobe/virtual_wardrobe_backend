@@ -28,7 +28,10 @@ async def get_user_info(
             )
         
         user = await prisma.user.find_first(
-            where={"id": current_user.id, "is_deleted": False}
+            where={"id": current_user.id, "is_deleted": False},
+            include={
+                "VirtualTryOn": True
+            }
         )
 
         user_dict = user.model_dump(mode='json')
