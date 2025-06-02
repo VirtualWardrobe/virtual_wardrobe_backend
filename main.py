@@ -13,6 +13,9 @@ from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 from env import env
 
+
+# Configure logging
+
 LOG_DIR = env.LOG_DIR
 LOG_PATH = os.path.join(LOG_DIR, "app.log")
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
@@ -49,15 +52,25 @@ for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
 
 logger.info("Logging is set up correctly.")
 
+
+# Initialize FastAPI application and include routers
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Prisma client")
     await PrismaClient.get_instance()
+
     logger.info("Starting Redis client")
-    await redis_handler.connect()
+    client = await redis_handler.get_client()
+
+    logger.info("Flushing Redis database")
+    await client.flushdb()
+
     yield
+
     logger.info("Shutting down Prisma client")
     await PrismaClient.close_connection()
+
     logger.info("Shutting down Redis client")
     await redis_handler.disconnect()
 
