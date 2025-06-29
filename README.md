@@ -6,18 +6,18 @@
 
 ## 🚀 Key Improvements in Version 2.0
 
-| **Component**           | **Old Stack**                        | **New Stack**                                                       |
-|-------------------------|--------------------------------------|---------------------------------------------------------------------|
-| **Backend Framework**   | Django (synchronous)                 | FastAPI (asynchronous, OpenAPI support)                             |
-| **ORM**                 | Django ORM                           | Prisma ORM (type-safe, auto-generated client)                       |
-| **Database**            | SQLite                               | PostgreSQL + Neon Serverless PostgreSQL (scalable & cost-optimized) |
-| **Cloud Provider**      | AWS                                  | Google Cloud Platform (VMs, Cloud Storage)                          |
-| **Authentication**      | Django Built-in Auth (session-based) | JWT (stateless) + Google OAuth 2.0                                  |
-| **Caching**             | None                                 | Redis (in-memory caching)                                           |
-| **Architecture**        | Monolithic                           | Microservices                                                       |
-| **Virtual Try-On**      | Not implemented                      | Implemented using the CatVTON model via the fal.ai platform         |
-| **Database Indexing**   | Not implemented                      | Indexed key tables for optimized query performance                  |
-| **Logging & Monitoring**| Not implemented                      | Grafana Loki for real-time log aggregation                          |
+| **Component**            | **Old Stack**                        | **New Stack**                                                         |
+|--------------------------|--------------------------------------|-----------------------------------------------------------------------|
+| **Backend Framework**    | Django (synchronous)                 | FastAPI (asynchronous, OpenAPI support)                               |
+| **ORM**                  | Django ORM                           | Prisma ORM (type-safe, auto-generated client)                         |
+| **Database**             | SQLite                               | PostgreSQL via Neon Serverless PostgreSQL (scalable & cost-optimized) |
+| **Cloud Provider**       | AWS                                  | Google Cloud Platform (VMs, Cloud Storage)                            |
+| **Authentication**       | Django Built-in Auth (session-based) | JWT (stateless) + Google OAuth 2.0                                    |
+| **Architecture**         | Monolithic                           | Microservices                                                         |
+| **Caching**              | Not implemented                      | Redis (in-memory caching)                                             |
+| **Database Indexing**    | Not implemented                      | Indexed key tables for optimized query performance                    |
+| **Virtual Try-On**       | Not implemented                      | Implemented using the CatVTON model via the fal.ai platform           |
+| **Logging & Monitoring** | Not implemented                      | Grafana Loki for real-time log aggregation                            |
 
 ---
 
