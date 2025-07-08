@@ -40,7 +40,8 @@
 
 ### Redis Caching
 
-- Integrated Redis to reduce database load and enhance browsing speed.
+- Integrated Redis to reduce database load.
+- Improved browsing speed through efficient caching.
 
 ### Cloud Infrastructure
 
