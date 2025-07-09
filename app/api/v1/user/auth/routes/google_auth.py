@@ -1,6 +1,4 @@
-import httpx
-import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 from app.utils.success_handler import success_response
@@ -8,6 +6,7 @@ from app.db.prisma_client import get_prisma
 from typing import Optional
 from app.api.v1.user.auth.routes.user import create_access_token
 from env import env
+import httpx, logging
 
 
 router = APIRouter()
@@ -85,14 +84,23 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
 
         prisma = await get_prisma()
 
-        user_exist = await prisma.user.find_first(where={"email":user_info['email']})
+        user_exist = await prisma.user.find_first(where={"email": user_info['email']})
 
-        if not user_exist:
+        if user_exist:
+            if user_exist.is_deleted:
+                # redirect to frontend with soft-deleted flag and email
+                redirect_url = str(env.FRONT_END_RESPONSE_URI) + '?' + str(urlencode({
+                    'success': 'false',
+                    'email': user_exist.email
+                }))
+                return RedirectResponse(url=redirect_url)
+
+        else:
             user_exist = await prisma.user.create(data={
                 "name": user_info['name'],
-                "email":user_info['email'],
-                "is_email_verified" : True,
-                "is_google_verified" : True
+                "email": user_info['email'],
+                "is_email_verified": True,
+                "is_google_verified": True
             })
 
         access_token = create_access_token(data={"email":user_exist.email, "id":user_exist.id})
@@ -103,7 +111,6 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
             'access_token': access_token
         }))
         return RedirectResponse(url=redirect_url)
-
 
     except httpx.HTTPStatusError as e:
         # Handle specific HTTP errors

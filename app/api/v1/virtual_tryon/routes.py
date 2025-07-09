@@ -67,7 +67,9 @@ async def virtual_tryon(
             )
 
             redis_client = await redis_handler.get_client()
-            keys = await redis_client.keys(f'virtual_tryon_{user.id}_*')
+            virtual_tryon_keys = await redis_client.keys(f'virtual_tryon_{user.id}_*')
+            user_info_keys = await redis_client.keys(f'user_info_{user.id}')
+            keys = virtual_tryon_keys + user_info_keys
             if keys:
                 await redis_client.delete(*keys)
 

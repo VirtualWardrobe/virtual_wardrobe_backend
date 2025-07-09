@@ -17,3 +17,6 @@ class ResetPassword(BaseModel):
     email: str
     otp: str
     new_password: str
+
+class EmailOnlyRequest(BaseModel):
+    email: str

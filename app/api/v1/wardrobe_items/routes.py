@@ -295,10 +295,11 @@ async def delete_wardrobe_item(
         if not existing_item:
             raise HTTPException(status_code=404, detail="Wardrobe item not found")
         
-        await delete_file_from_gcs(
-            file_url=existing_item.image_url,
-            bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET
-        )
+        if existing_item.image_url:
+            await delete_file_from_gcs(
+                file_url=existing_item.image_url,
+                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET
+            )
         
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:
             deleted_item = await prisma.wardrobeitem.delete(

@@ -4,7 +4,7 @@ from app.db.prisma_client import get_prisma
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from jose import jwt, JWTError, ExpiredSignatureError
-from app.api.v1.user.auth.models.user import Register, OTPVerify, Login, ResetPassword
+from app.api.v1.user.auth.models.user import Register, OTPVerify, Login, ResetPassword, EmailOnlyRequest
 from app.api.v1.user.auth.mails.templates import sign_up_template, forgot_password_template
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.utils.mail_handler import send_mail
@@ -126,49 +126,58 @@ async def get_current_admin(current_user=Depends(get_current_user)):
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     request: Register,
-    prisma: Prisma =  Depends(get_prisma)
+    prisma: Prisma = Depends(get_prisma)
 ):
-    try:        
-        async with prisma.tx(timeout=65000,max_wait=80000) as tx:
+    try:
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:
 
-            existing_user=await tx.user.find_first(where={"email":request.email, "is_deleted":False})
+            existing_user = await tx.user.find_first(where={"email": request.email})
+
             if existing_user:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already registered with given email")
+                if not existing_user.is_deleted:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="User already registered with given email"
+                    )
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email was deleted. Do you want to restore it?"
+                )
 
-            #TODO verify the emails if belong to valid domain
-
-            otp = str(random.randint(100000,999999))
-            session = await tx.otpsession.find_first(where={"email":request.email, "type":"signup"})
+            session = await tx.otpsession.find_first(where={"email": request.email, "type": "signup"})
             if session:
-                await tx.otpsession.delete_many(where={"session_id":session.session_id})
+                await tx.otpsession.delete_many(where={"session_id": session.session_id})
+
+            otp = str(random.randint(100000, 999999))
 
             session = await tx.otpsession.create(data={
-                "name":request.name,
-                "email":request.email,
-                "hashed_password":get_password_hash(request.password),
-                "otp":otp
+                "name": request.name,
+                "email": request.email,
+                "hashed_password": get_password_hash(request.password),
+                "otp": otp,
+                "type": "signup"
             })
 
             await send_mail(
                 contacts=[request.email],
                 subject="Virtual Wardrobe: Verify Your Account",
-                message=sign_up_template(otp)  
+                message=sign_up_template(otp)
             )
 
-            return success_response(message="OTP Sent to your respective email !", data={
-                "session_id":session.session_id
+            return success_response(message="OTP sent to your email!", data={
+                "session_id": session.session_id
             })
-   
+
     except HTTPException as he:
         logging.error(he)
         raise he
-    
+
     except Exception as e:
         error_code = getattr(e, 'code', 500)
         error_code = getattr(e, 'status_code', error_code)
-        
+
         logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
+
         raise HTTPException(
             status_code=error_code,
             detail=str(e)
@@ -181,39 +190,61 @@ async def verify_otp(
     prisma: Prisma = Depends(get_prisma)
 ):
     try:
-        async with prisma.tx(timeout=65000,max_wait=80000) as tx:   
-
-            session = await tx.otpsession.find_first(where={"session_id":request.session_id})
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:   
+            session = await tx.otpsession.find_first(where={"session_id": request.session_id})
 
             if not session:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Session doesn't exist !")
-            
-            if session.otp != request.otp:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP is incorrect !")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="Session doesn't exist!"
+                )
 
-            user = await tx.user.create(
+            if session.otp != request.otp:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="OTP is incorrect!"
+                )
+
+            # Check if user already exists (even soft-deleted)
+            existing_user = await tx.user.find_first(where={"email": session.email})
+
+            if existing_user:
+                if existing_user.is_deleted:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="An account with this email was previously deleted. Please restore it before verifying OTP."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="User already verified. Please login."
+                    )
+
+            # Proceed to create new user
+            await tx.user.create(
                 data={
-                    "name" : session.name,
+                    "name": session.name,
                     "email": session.email,
                     "hashed_password": session.hashed_password,
                     "is_email_verified": True
                 }
             )
 
-            await tx.otpsession.delete_many(where={"session_id":session.session_id})
+            # Clean up OTP session
+            await tx.otpsession.delete_many(where={"session_id": session.session_id})
 
-            return success_response(message="OTP verified successfully ! Login to the platform")
-        
+            return success_response(message="OTP verified successfully! Login to the platform")
+
     except HTTPException as he:
         logging.error(he)
         raise he
-    
+
     except Exception as e:
         error_code = getattr(e, 'code', 500)
         error_code = getattr(e, 'status_code', error_code)
-        
+
         logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
+
         raise HTTPException(
             status_code=error_code,
             detail=str(e)
@@ -225,33 +256,48 @@ async def login(
     request: Login,
     prisma: Prisma = Depends(get_prisma)
 ):
-    try:        
-        user = await prisma.user.find_first(where={"email":request.email, "is_deleted":False})
+    try:
+        user = await prisma.user.find_first(where={"email": request.email})
+
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not registered ! Please register to the platform")
-        
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not registered! Please register to the platform."
+            )
+
         if not verify_password(request.password, user.hashed_password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is incorrect !")
-        
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password is incorrect!"
+            )
+
+        # If soft deleted, restore the user
+        if user.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This account is soft-deleted. Would you like to restore it?"
+            )
+
         access_token = create_access_token(data={
-            "id":user.id,
-            "email":user.email
+            "id": user.id,
+            "email": user.email
         })
 
-        return success_response(message="Login success !", data={
-            "access_token": access_token
-        })
-        
+        return success_response(
+            message="Login success!",
+            data={"access_token": access_token}
+        )
+
     except HTTPException as he:
         logging.error(he)
         raise he
-    
+
     except Exception as e:
         error_code = getattr(e, 'code', 500)
         error_code = getattr(e, 'status_code', error_code)
-        
+
         logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
+
         raise HTTPException(
             status_code=error_code,
             detail=str(e)
@@ -397,6 +443,81 @@ async def reset_password(
         
         logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
         
+        raise HTTPException(
+            status_code=error_code,
+            detail=str(e)
+        )
+
+
+@router.post("/restore-account", status_code=status.HTTP_200_OK)
+async def restore_account(
+    request: Login,
+    prisma: Prisma = Depends(get_prisma)
+):
+    try:
+        user = await prisma.user.find_first(where={"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not user.is_deleted:
+            raise HTTPException(status_code=400, detail="User account is already active")
+
+        if not verify_password(request.password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Password is incorrect!")
+
+        user = await prisma.user.update(
+            where={"id": user.id},
+            data={"is_deleted": False}
+        )
+
+        access_token = create_access_token(data={"id": user.id, "email": user.email})
+
+        return success_response(message="Account restored", data={"access_token": access_token})
+
+    except HTTPException as he:
+        logging.error(he)
+        raise he
+
+    except Exception as e:
+        error_code = getattr(e, "code", 500)
+        error_code = getattr(e, "status_code", error_code)
+        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
+
+        raise HTTPException(
+            status_code=error_code,
+            detail=str(e)
+        )
+
+
+@router.post("/restore-account/google", status_code=status.HTTP_200_OK)
+async def restore_account_google(
+    request: EmailOnlyRequest,
+    prisma: Prisma = Depends(get_prisma)
+):
+    try:
+        user = await prisma.user.find_first(where={"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not user.is_deleted:
+            raise HTTPException(status_code=400, detail="User account is already active")
+
+        user = await prisma.user.update(
+            where={"id": user.id},
+            data={"is_deleted": False, "is_google_verified": True}
+        )
+
+        access_token = create_access_token(data={"id": user.id, "email": user.email})
+        return success_response(message="Account restored", data={"access_token": access_token})
+
+    except HTTPException as he:
+        logging.error(he)
+        raise he
+
+    except Exception as e:
+        error_code = getattr(e, "code", 500)
+        error_code = getattr(e, "status_code", error_code)
+        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=error_code,
             detail=str(e)
