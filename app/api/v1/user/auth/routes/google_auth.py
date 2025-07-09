@@ -94,7 +94,7 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
                     'email': user_exist.email
                 }))
                 return RedirectResponse(url=redirect_url)
-            elif not user_exist.is_google_verified:
+            if not user_exist.is_google_verified:
                 # update user to mark as google verified
                 user_exist = await prisma.user.update(
                     where={"id": user_exist.id},
