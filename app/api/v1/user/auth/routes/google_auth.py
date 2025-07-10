@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 from app.utils.success_handler import success_response
 from app.db.prisma_client import get_prisma
+from app.redis.redis_client import redis_handler
 from typing import Optional
 from app.api.v1.user.auth.routes.user import create_access_token
 from env import env
@@ -108,6 +109,10 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
                 "is_email_verified": True,
                 "is_google_verified": True
             })
+
+        cache_key = f"user_info_{user_exist.id}"
+        redis_client = await redis_handler.get_client()
+        await redis_client.delete(cache_key)
 
         access_token = create_access_token(data={"email":user_exist.email, "id":user_exist.id})
         
