@@ -26,7 +26,7 @@ async def send_mail(contacts: list, subject: str, message: str) -> resend.Email:
     Raises EmailSendingError if all retries fail.
     """
     params: resend.Emails.SendParams = {
-        "from": "noreply@backend.virtualwardrobe.in",
+        "from": "Virtual Wardrobe <hello@virtualwardrobe.in>",
         "to": contacts,
         "subject": subject,
         "html": message,
