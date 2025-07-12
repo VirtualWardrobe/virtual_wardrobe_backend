@@ -30,7 +30,12 @@ async def get_user_info(
         user = await prisma.user.find_first(
             where={"id": current_user.id, "is_deleted": False},
             include={
-                "VirtualTryOn": True
+                "VirtualTryOn": {
+                    "order_by": {
+                        "created_at": "desc"
+                    },
+                    "take": 3
+                }
             }
         )
 

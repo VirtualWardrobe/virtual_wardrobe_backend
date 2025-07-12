@@ -251,6 +251,57 @@ async def verify_otp(
         )
     
 
+@router.post("/resend-otp", status_code=status.HTTP_200_OK)
+async def resend_otp(
+    session_id: str,
+    prisma: Prisma = Depends(get_prisma)
+):
+    try:
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:
+            session = await tx.otpsession.find_first(
+                where={"session_id": session_id}
+            )
+
+            if not session:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="Session doesn't exist!"
+                )
+
+            otp = str(random.randint(100000, 999999))
+
+            await tx.otpsession.update(
+                where={"session_id": session.session_id},
+                data={"otp": otp}
+            )
+
+            await send_mail(
+                contacts=[session.email],
+                subject="Virtual Wardrobe: Verify Your Account",
+                message=sign_up_template(otp)
+            )
+
+            return success_response(
+                message="OTP resent successfully!",
+                data={"session_id": session.session_id}
+            )
+
+    except HTTPException as he:
+        logging.error(he)
+        raise he
+
+    except Exception as e:
+        error_code = getattr(e, 'code', 500)
+        error_code = getattr(e, 'status_code', error_code)
+
+        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
+
+        raise HTTPException(
+            status_code=error_code,
+            detail=str(e)
+        )
+    
+
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(
     request: Login,
