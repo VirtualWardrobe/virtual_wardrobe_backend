@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 from app.utils.success_handler import success_response

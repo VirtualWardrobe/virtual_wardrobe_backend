@@ -26,9 +26,10 @@ async def create_wardrobe_items(
     user=Depends(get_current_user)
 ):
     try:
-        data = {}
-        data["user_id"] = user.id
-        data["category"] = item_category
+        data = {
+            "user_id": user.id,
+            "category": item_category
+        }
         if item_type:
             data["type"] = item_type
         if item_brand:
@@ -80,7 +81,7 @@ async def get_wardrobe_items(
     page_size: Optional[int] = Query(10, ge=1, le=100),
     search: Optional[str] = Query(None),
     category: Optional[ItemCategory] = None,
-    type: Optional[ItemType] = None,
+    item_type: Optional[ItemType] = None,
     brand: Optional[str] = None,
     size: Optional[Size] = None,
     color: Optional[Color] = None,
@@ -89,7 +90,7 @@ async def get_wardrobe_items(
     try:
         skip = (page - 1) * page_size
         
-        cache_key = f'wardrobe_items_{user.id}_{page}_{page_size}_{search}_{category}_{type}_{brand}_{size}_{color}'
+        cache_key = f'wardrobe_items_{user.id}_{page}_{page_size}_{search}_{category}_{item_type}_{brand}_{size}_{color}'
         redis_client = await redis_handler.get_client()
         cached_data = await redis_client.get(cache_key)
         
@@ -104,8 +105,8 @@ async def get_wardrobe_items(
         }
         if category:
             filters['category'] = category
-        if type:
-            filters['type'] = type
+        if item_type:
+            filters['type'] = item_type
         if brand:
             filters['brand'] = brand
         if size:
@@ -251,7 +252,7 @@ async def update_wardrobe_item(
             data["image_url"] = file_url
         
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:
-            item = await prisma.wardrobeitem.update(
+            item = await tx.wardrobeitem.update(
                 where={
                     "id": item_id,
                     "user_id": user.id
@@ -302,7 +303,7 @@ async def delete_wardrobe_item(
             )
         
         async with prisma.tx(timeout=65000,max_wait=80000) as tx:
-            deleted_item = await prisma.wardrobeitem.delete(
+            deleted_item = await tx.wardrobeitem.delete(
                 where={
                     "id": item_id,
                     "user_id": user.id

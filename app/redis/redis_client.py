@@ -34,7 +34,7 @@ class RedisClientManager:
             await client.ping()
             logger.info("Successfully connected to Redis")
             return client
-        except (redis.ConnectionError, redis.AuthenticationError, redis.TimeoutError) as e:
+        except (redis.ConnectionError, redis.TimeoutError) as e:
             logger.error(f"Failed to connect to Redis: {str(e)}")
             if client:
                 await client.close()  # Cleanup on failure

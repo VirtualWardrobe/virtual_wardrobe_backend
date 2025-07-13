@@ -56,7 +56,7 @@ logger.info("Logging is set up correctly.")
 # Initialize FastAPI application and include routers
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     logger.info("Starting Prisma client")
     await PrismaClient.get_instance()
 

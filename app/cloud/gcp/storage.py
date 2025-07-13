@@ -59,8 +59,6 @@ storage_client = storage.Client.from_service_account_info(service_account_info)
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf", "webp", "svg", "mp3", "wav", "ogg", "aac"}
 
-# storage_client = None
-
 
 def is_allowed_file(filename: str) -> bool:
     """

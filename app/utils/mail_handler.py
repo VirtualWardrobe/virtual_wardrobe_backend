@@ -1,8 +1,6 @@
-import resend
-import logging
-from env import env
+import resend, logging
 import anyio, anyio.to_thread
-import logging
+from env import env
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 resend.api_key = env.RESEND_API_KEY
