@@ -39,4 +39,4 @@ async def send_mail(contacts: list, subject: str, message: str) -> resend.Email:
         return email
     except Exception as e:
         logging.error("Failed to send email to %s: %s", contacts, str(e))
-        raise EmailSendingError("Failed to send email: %s" % str(e))
+        raise EmailSendingError(f"Failed to send email: {str(e)}")

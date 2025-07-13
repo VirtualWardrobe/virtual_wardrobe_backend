@@ -30,7 +30,7 @@ service_account_info = {
     "type": "service_account",
     "project_id": env.GCP_PROJECT_ID,
     "private_key_id": env.GCP_PRIVATE_KEY_ID,
-    "private_key": "-----BEGIN PRIVATE KEY-----\n%s\n-----END PRIVATE KEY-----\n" % decode(env.GCP_PRIVATE_KEY),
+    "private_key": f"-----BEGIN PRIVATE KEY-----\n{decode(env.GCP_PRIVATE_KEY)}\n-----END PRIVATE KEY-----\n",
     "client_email": env.GCP_CLIENT_EMAIL,
     "client_id": env.GCP_CLIENT_ID,
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -75,7 +75,7 @@ async def upload_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optiona
         logger.error("Error uploading file to GCS: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error uploading file to GCS: %s" % str(e),
+            detail=f"Error uploading file to GCS: {str(e)}",
         )
 
 async def upload_image_from_url(image_url: str, bucket_name: str) -> str:
@@ -97,7 +97,7 @@ async def upload_image_from_url(image_url: str, bucket_name: str) -> str:
         logger.error("Error uploading image from URL: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error uploading image from URL: %s" % str(e),
+            detail=f"Error uploading image from URL: {str(e)}",
         )
 
 async def upload_audio_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optional[str] = None,
@@ -124,7 +124,7 @@ async def upload_audio_file_to_gcs(file: bytes, bucket_name: str, folder_name: O
         logger.error("Error uploading audio file to GCS: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error uploading audio file to GCS: %s" % str(e),
+            detail=f"Error uploading audio file to GCS: {str(e)}",
         )
 
 async def delete_file_from_gcs(file_url: str, bucket_name: str) -> dict:
@@ -147,7 +147,7 @@ async def delete_file_from_gcs(file_url: str, bucket_name: str) -> dict:
         logger.error("Error deleting file from GCS: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error deleting file from GCS: %s" % str(e),
+            detail=f"Error deleting file from GCS: {str(e)}",
         )
 
 def parse_gcs_url(gcs_url: str) -> Tuple[str, str]:
@@ -177,7 +177,7 @@ def parse_gcs_url(gcs_url: str) -> Tuple[str, str]:
 
     except Exception as e:
         logger.error("Error parsing GCS URL '%s': %s", gcs_url, str(e))
-        raise ValueError("Error parsing GCS URL: %s" % str(e))
+        raise ValueError(f"Error parsing GCS URL: {str(e)}")
 
 async def generate_signed_url(gcs_url: str, expires_in: int = 3600) -> str:
     try:
@@ -238,5 +238,5 @@ async def generate_pdf_upload_signed_url(bucket_name: str, filename: str, expire
         logger.error("Error generating signed URL for PDF upload: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error generating signed URL: %s" % str(e)
+            detail=f"Error generating signed URL: {str(e)}"
         )
