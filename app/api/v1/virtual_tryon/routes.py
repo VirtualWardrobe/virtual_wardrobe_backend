@@ -49,7 +49,7 @@ async def virtual_tryon(
             filename=file_name
         )
         data["garment_image_url"] = garment_image_url
-        
+
         result_image = fal_client.subscribe(
             "fal-ai/cat-vton",
             arguments={
@@ -61,10 +61,8 @@ async def virtual_tryon(
         )
         data["result_image_url"] = result_image["image"]["url"]
 
-        async with prisma.tx(timeout=65000,max_wait=80000) as tx:
-            result = await tx.virtualtryon.create(
-                data=data
-            )
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:
+            result = await tx.virtualtryon.create(data=data)
 
             redis_client = await redis_handler.get_client()
             virtual_tryon_keys = await redis_client.keys(f'virtual_tryon_{user.id}_*')
@@ -77,13 +75,13 @@ async def virtual_tryon(
             message="Virtual try-on finished successfully",
             data=result
         )
-    
+
     except HTTPException as httpx:
-        logging.error(httpx)
+        logging.error("HTTPException during virtual try-on: %s", httpx)
         raise httpx
-    
+
     except Exception as e:
-        logging.error(f"Error occurred during virtual try-on: {e}", exc_info=True)
+        logging.error("Error occurred during virtual try-on: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -98,7 +96,7 @@ async def get_virtual_tryon(
         cache_key = f"virtual_tryon_{user.id}_{page}_{page_size}"
         redis_client = await redis_handler.get_client()
         cached_data = await redis_client.get(cache_key)
- 
+
         if cached_data:
             return success_response(
                 message="Virtual try-on results retrieved from cache",
@@ -106,7 +104,7 @@ async def get_virtual_tryon(
             )
 
         skip = (page - 1) * page_size
-        
+
         filters = {
             "user_id": user.id
         }
@@ -117,12 +115,12 @@ async def get_virtual_tryon(
             take=page_size,
             order={"created_at": "desc"}
         )
-        
+
         total_count = await prisma.virtualtryon.count(where=filters)
         total_pages = math.ceil(total_count / page_size)
 
         serialized_data = [result.model_dump(mode='json') for result in results]
-        
+
         response_data = {
             "items": serialized_data,
             "metadata": {
@@ -136,18 +134,18 @@ async def get_virtual_tryon(
         }
 
         await redis_client.setex(cache_key, 3600, json.dumps(response_data))
-        
+
         return success_response(
             message="Virtual try-on results retrieved successfully",
             data=response_data
         )
-    
+
     except HTTPException as httpx:
-        logging.error(httpx)
+        logging.error("HTTPException retrieving virtual try-on list: %s", httpx)
         raise httpx
-    
+
     except Exception as e:
-        logging.error(f"Error retrieving virtual try-on results: {e}", exc_info=True)
+        logging.error("Error retrieving virtual try-on results: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -167,29 +165,29 @@ async def get_virtual_tryon_by_id(
                 message="Virtual try-on result retrieved from cache",
                 data=json.loads(cached_data)
             )
-        
+
         result = await prisma.virtualtryon.find_first(
             where={
                 "id": tryon_id,
                 "user_id": user.id
             }
         )
-        
+
         if not result:
             raise HTTPException(status_code=404, detail="Virtual try-on result not found")
-        
+
         result_dict = result.model_dump(mode='json')
         await redis_client.setex(cache_key, 3600, json.dumps(result_dict))
-        
+
         return success_response(
             message="Virtual try-on result retrieved successfully",
             data=result
         )
-    
+
     except HTTPException as httpx:
-        logging.error(httpx)
+        logging.error("HTTPException retrieving virtual try-on by ID: %s", httpx)
         raise httpx
-    
+
     except Exception as e:
-        logging.error(f"Error retrieving virtual try-on result: {e}", exc_info=True)
+        logging.error("Error retrieving virtual try-on result by ID: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

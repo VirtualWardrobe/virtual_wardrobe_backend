@@ -13,16 +13,25 @@ class RedisClientManager:
         self.client: Optional[redis.Redis] = None
 
     @retry(
-        stop=stop_after_attempt(10),  # Retry up to 10 times
-        wait=wait_fixed(30),          # Wait 30 seconds between retries
-        retry=retry_if_exception_type((redis.ConnectionError, redis.AuthenticationError, redis.TimeoutError)),  # Retry on specific Redis errors
-        before=lambda retry_state: logger.warning(f"Retrying Redis connection attempt {retry_state.attempt_number}..."),
-        after=lambda retry_state: logger.error(f"Failed to connect to Redis after {retry_state.attempt_number} attempts") if retry_state.outcome.failed else None
+        stop=stop_after_attempt(10),
+        wait=wait_fixed(30),
+        retry=retry_if_exception_type((
+            redis.ConnectionError,
+            redis.AuthenticationError,
+            redis.TimeoutError,
+        )),
+        before=lambda retry_state: logger.warning(
+            "Retrying Redis connection attempt %d...", retry_state.attempt_number
+        ),
+        after=lambda retry_state: logger.error(
+            "Failed to connect to Redis after %d attempts", retry_state.attempt_number
+        ) if retry_state.outcome.failed else None
     )
     async def _connect_with_retry(self) -> redis.Redis:
         """
         Attempt to create and connect to a Redis instance with retry logic.
         """
+        client = None
         try:
             client = redis.Redis(
                 host=env.REDIS_HOST,
@@ -35,10 +44,10 @@ class RedisClientManager:
             logger.info("Successfully connected to Redis")
             return client
         except (redis.ConnectionError, redis.TimeoutError) as e:
-            logger.error(f"Failed to connect to Redis: {str(e)}")
+            logger.error("Failed to connect to Redis: %s", str(e))
             if client:
-                await client.close()  # Cleanup on failure
-            raise  # Re-raise the exception to trigger retry
+                await client.close()
+            raise
 
     async def connect(self) -> bool:
         """
@@ -59,7 +68,7 @@ class RedisClientManager:
                 await self.client.close()
                 logger.info("Redis connection closed")
             except Exception as e:
-                logger.error(f"Error closing Redis connection: {str(e)}")
+                logger.error("Error closing Redis connection: %s", str(e))
             finally:
                 self.client = None
         else:

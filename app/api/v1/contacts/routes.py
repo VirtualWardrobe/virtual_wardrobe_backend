@@ -30,11 +30,11 @@ async def create_contact(
         )
     
     except HTTPException as httpx:
-        logging.error(httpx)
+        logging.error("HTTPException: %s", httpx)
         raise httpx
 
     except Exception as e:
-        logging.error(f"Error in sending message: {e}", exc_info=True)
+        logging.error("Error in sending message: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -72,9 +72,9 @@ async def get_contacts(
         )
     
     except HTTPException as httpx:
-        logging.error(httpx)
+        logging.error("HTTPException: %s", httpx)
         raise httpx
 
     except Exception as e:
-        logging.error(f"Error in retrieving messages: {e}", exc_info=True)
+        logging.error("Error in retrieving messages: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

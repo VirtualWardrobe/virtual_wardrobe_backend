@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/user", status_code=status.HTTP_200_OK)
 async def get_user_info(
     prisma: Prisma = Depends(get_prisma),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
     try:
         cache_key = f"user_info_{current_user.id}"
@@ -26,18 +26,19 @@ async def get_user_info(
                 message="User information retrieved from cache",
                 data=json.loads(cached_user)
             )
-        
+
         user = await prisma.user.find_first(
             where={"id": current_user.id, "is_deleted": False},
             include={
                 "VirtualTryOn": {
-                    "order_by": {
-                        "created_at": "desc"
-                    },
+                    "order_by": {"created_at": "desc"},
                     "take": 3
                 }
             }
         )
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
         user_dict = user.model_dump(mode='json')
         await redis_client.setex(cache_key, 3600, json.dumps(user_dict))
@@ -46,30 +47,23 @@ async def get_user_info(
             message="User information retrieved successfully",
             data=user
         )
-    
+
     except HTTPException as he:
-        logging.error(he)
-        raise he
-    
+        logging.error("HTTPException in get_user_info: %s", he)
+        raise
+
     except Exception as e:
-        error_code = getattr(e, 'code', 500)
-        error_code = getattr(e, 'status_code', error_code)
-        
-        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
-        raise HTTPException(
-            status_code=error_code,
-            detail=str(e)
-        )
+        logging.error("Unexpected error in get_user_info: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.patch("/user", status_code=status.HTTP_200_OK)
 async def update_user(
-    request : UpdateUserInfo,
+    request: UpdateUserInfo,
     prisma: Prisma = Depends(get_prisma),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
-    try:     
+    try:
         update_data = request.model_dump(exclude_unset=True)
         if not update_data:
             raise HTTPException(
@@ -77,15 +71,14 @@ async def update_user(
                 detail="No fields provided for update"
             )
 
-        async with prisma.tx(timeout=65000,max_wait=80000) as tx:
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:
             updated_user = await tx.user.update(
                 where={"id": current_user.id, "is_deleted": False},
                 data=update_data
             )
 
-            cache_key = f"user_info_{current_user.id}"
             redis_client = await redis_handler.get_client()
-            await redis_client.delete(cache_key)
+            await redis_client.delete(f"user_info_{current_user.id}")
 
         return success_response(
             message="User updated successfully",
@@ -93,53 +86,35 @@ async def update_user(
         )
 
     except HTTPException as he:
-        logging.error(he)
-        raise he
-    
+        logging.error("HTTPException in update_user: %s", he)
+        raise
+
     except Exception as e:
-        error_code = getattr(e, 'code', 500)
-        error_code = getattr(e, 'status_code', error_code)
-        
-        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
-        raise HTTPException(
-            status_code=error_code,
-            detail=str(e)
-        )
+        logging.error("Unexpected error in update_user: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/user", status_code=status.HTTP_200_OK)
 async def delete_user(
     prisma: Prisma = Depends(get_prisma),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
-    try:        
-        # soft delete the user
-        async with prisma.tx(timeout=65000,max_wait=80000) as tx:
+    try:
+        async with prisma.tx(timeout=65000, max_wait=80000) as tx:
             await tx.user.update(
                 where={"id": current_user.id},
-                data={"is_deleted":True}
+                data={"is_deleted": True}
             )
 
-            cache_key = f"user_info_{current_user.id}"
             redis_client = await redis_handler.get_client()
-            await redis_client.delete(cache_key)
-        
-        return success_response(
-            message="User deleted successfully"
-        )
-        
+            await redis_client.delete(f"user_info_{current_user.id}")
+
+        return success_response(message="User deleted successfully")
+
     except HTTPException as he:
-        logging.error(he)
-        raise he
-    
+        logging.error("HTTPException in delete_user: %s", he)
+        raise
+
     except Exception as e:
-        error_code = getattr(e, 'code', 500)
-        error_code = getattr(e, 'status_code', error_code)
-        
-        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
-        raise HTTPException(
-            status_code=error_code,
-            detail=str(e)
-        )
+        logging.error("Unexpected error in delete_user: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

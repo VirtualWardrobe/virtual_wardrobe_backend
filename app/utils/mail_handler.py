@@ -14,10 +14,13 @@ class EmailSendingError(Exception):
     stop=stop_after_attempt(3),  # Retry up to 3 times
     wait=wait_fixed(30),         # Wait 30 seconds between retries
     retry=retry_if_exception_type(Exception),  # Retry on any exception
-    before=lambda retry_state: logging.warning(f"Retrying email send attempt {retry_state.attempt_number}..."),
-    after=lambda retry_state: logging.error(f"Failed after {retry_state.attempt_number} attempts") if retry_state.outcome.failed else None
+    before=lambda retry_state: logging.warning(
+        "Retrying email send attempt %d...", retry_state.attempt_number
+    ),
+    after=lambda retry_state: logging.error(
+        "Failed after %d attempts", retry_state.attempt_number
+    ) if retry_state.outcome.failed else None
 )
-
 async def send_mail(contacts: list, subject: str, message: str) -> resend.Email:
     """
     Asynchronously send an email with retry mechanism.
@@ -32,8 +35,8 @@ async def send_mail(contacts: list, subject: str, message: str) -> resend.Email:
     try:
         # Run synchronous resend.Emails.send in a thread
         email: resend.Email = await anyio.to_thread.run_sync(lambda: resend.Emails.send(params))
-        logging.info(f"Email sent successfully to {contacts}")
+        logging.info("Email sent successfully to %s", contacts)
         return email
     except Exception as e:
-        logging.error(f"Failed to send email to {contacts}: {str(e)}")
-        raise EmailSendingError(f"Failed to send email: {str(e)}")
+        logging.error("Failed to send email to %s: %s", contacts, str(e))
+        raise EmailSendingError("Failed to send email: %s" % str(e))

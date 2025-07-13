@@ -32,15 +32,13 @@ async def google_login():
         return success_response(message="Redirecting to Google login", data={"google_auth_url": url})
 
     except HTTPException as he:
-        logging.error(he)
+        logging.error("HTTPException during Google login: %s", he)
         raise he
-    
+
     except Exception as e:
         error_code = getattr(e, 'code', 500)
         error_code = getattr(e, 'status_code', error_code)
-        
-        logging.error(f"Error Code: {error_code}, Message: {str(e)}", exc_info=True)
-        
+        logging.error("Error Code: %s, Message: %s", error_code, str(e), exc_info=True)
         raise HTTPException(
             status_code=error_code,
             detail=str(e)
@@ -64,8 +62,9 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
 
         async with httpx.AsyncClient() as client:
             response = await client.post(GOOGLE_TOKEN_URL, data=data)
-        
-        if not response.status_code == 200:
+
+        if response.status_code != 200:
+            logging.error("Failed to retrieve token from Google. Status: %s, Response: %s", response.status_code, response.text)
             redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
             return RedirectResponse(url=redirect_url)
 
@@ -77,31 +76,29 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
                 headers={"Authorization": f"Bearer {access_token}"}
             )
 
-        if not user_info_response.status_code == 200:
+        if user_info_response.status_code != 200:
+            logging.error("Failed to fetch user info from Google. Status: %s, Response: %s", user_info_response.status_code, user_info_response.text)
             redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
             return RedirectResponse(url=redirect_url)
 
         user_info = user_info_response.json()
-
         prisma = await get_prisma()
 
         user_exist = await prisma.user.find_first(where={"email": user_info['email']})
 
         if user_exist:
             if user_exist.is_deleted:
-                # redirect to frontend with soft-deleted flag and email
                 redirect_url = str(env.FRONT_END_RESPONSE_URI) + '?' + str(urlencode({
                     'success': 'false',
                     'email': user_exist.email
                 }))
                 return RedirectResponse(url=redirect_url)
+
             if not user_exist.is_google_verified:
-                # update user to mark as google verified
                 user_exist = await prisma.user.update(
                     where={"id": user_exist.id},
                     data={"is_google_verified": True}
                 )
-
         else:
             user_exist = await prisma.user.create(data={
                 "name": user_info['name'],
@@ -114,22 +111,20 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
         redis_client = await redis_handler.get_client()
         await redis_client.delete(cache_key)
 
-        access_token = create_access_token(data={"email":user_exist.email, "id":user_exist.id})
-        
-        # send to front-end url the access_token
-        redirect_url = str(env.FRONT_END_RESPONSE_URI) +'?'+ str(urlencode({
+        access_token = create_access_token(data={"email": user_exist.email, "id": user_exist.id})
+
+        redirect_url = str(env.FRONT_END_RESPONSE_URI) + '?' + str(urlencode({
             'success': 'true',
             'access_token': access_token
         }))
         return RedirectResponse(url=redirect_url)
 
     except httpx.HTTPStatusError as e:
-        # Handle specific HTTP errors
-        logging.error(e)
+        logging.error("HTTPStatusError during Google callback: %s", e)
         redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
         return RedirectResponse(url=redirect_url)
-    
+
     except Exception as e:
-        logging.error(e)
+        logging.error("Unhandled exception in Google callback: %s", e, exc_info=True)
         redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
         return RedirectResponse(url=redirect_url)
