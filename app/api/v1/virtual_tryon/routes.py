@@ -191,3 +191,48 @@ async def get_virtual_tryon_by_id(
     except Exception as e:
         logging.error("Error retrieving virtual try-on result by ID: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/virtual-tryon/{tryon_id}")
+async def delete_virtual_tryon(
+    tryon_id: str,
+    prisma: Prisma = Depends(get_prisma),
+    user=Depends(get_current_user)
+):
+    try:
+        existing_tryon = await prisma.virtualtryon.find_first(
+            where={
+                "id": tryon_id,
+                "user_id": user.id
+            }
+        )
+        
+        if not existing_tryon:
+            raise HTTPException(status_code=404, detail="Virtual try-on result not found")
+        
+        result = await prisma.virtualtryon.delete(
+            where={
+                "id": tryon_id,
+                "user_id": user.id
+            }
+        )
+
+        redis_client = await redis_handler.get_client()
+        virtual_tryon_keys = await redis_client.keys(f'virtual_tryon_{user.id}_*')
+        user_info_keys = await redis_client.keys(f'user_info_{user.id}')
+        keys = virtual_tryon_keys + user_info_keys
+        if keys:
+            await redis_client.delete(*keys)
+
+        return success_response(
+            message="Virtual try-on result deleted successfully",
+            data=result
+        )
+
+    except HTTPException as httpx:
+        logging.error("HTTPException deleting virtual try-on: %s", httpx)
+        raise httpx
+
+    except Exception as e:
+        logging.error("Error deleting virtual try-on result: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
