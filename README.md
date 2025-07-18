@@ -1,105 +1,120 @@
 # Virtual Wardrobe – Revolutionizing Fashion Organization Through Modern Technology
 
-**Virtual Wardrobe** is a cloud-native application designed to help users efficiently manage their personal wardrobe, reduce overconsumption, and make sustainable fashion choices. With a complete revamp from a traditional tech stack to a modern, scalable architecture, the project now offers enhanced performance, new features, and a smoother user experience.
+**Virtual Wardrobe** is a full-stack, cloud-native application designed to help users efficiently manage their personal wardrobe, reduce overconsumption, and make sustainable fashion choices. Version 2.0 brings a modern, scalable architecture across both frontend and backend, ensuring a smoother, faster, and more immersive user experience.
 
 ---
 
-## 🚀 Key Improvements in Version 2.0
+## ✨ What's New in Version 2.0
 
-| **Component**            | **Old Stack**                        | **New Stack**                                                         |
-|--------------------------|--------------------------------------|-----------------------------------------------------------------------|
-| **Backend Framework**    | Django (synchronous)                 | FastAPI (asynchronous, OpenAPI support)                               |
-| **ORM**                  | Django ORM                           | Prisma ORM (type-safe, auto-generated client)                         |
-| **Database**             | SQLite                               | PostgreSQL via Neon Serverless PostgreSQL (scalable & cost-optimized) |
-| **Cloud Provider**       | AWS                                  | Google Cloud Platform (VMs, Cloud Storage)                            |
-| **Authentication**       | Django Built-in Auth (session-based) | JWT (stateless) + Google OAuth 2.0                                    |
-| **Architecture**         | Monolithic                           | Microservices                                                         |
-| **Caching**              | Not implemented                      | Redis (in-memory caching)                                             |
-| **Database Indexing**    | Not implemented                      | Indexed key tables for optimized query performance                    |
-| **Virtual Try-On**       | Not implemented                      | Implemented using the CatVTON model via the fal.ai platform           |
-| **Logging & Monitoring** | Not implemented                      | Grafana Loki for real-time log aggregation                            |
+| **Component**            | **Old Stack**         | **New Stack**                                      |
+| ------------------------ | --------------------- | -------------------------------------------------- |
+| **Frontend**             | HTML, CSS, JavaScript | Next.js (TypeScript) + Tailwind CSS                |
+| **Backend Framework**    | Django (synchronous)  | FastAPI (asynchronous, OpenAPI support)            |
+| **ORM**                  | Django ORM            | Prisma ORM (type-safe, auto-generated client)      |
+| **Database**             | SQLite                | PostgreSQL via Neon Serverless PostgreSQL          |
+| **Cloud Provider**       | AWS                   | Google Cloud Platform (VMs, Cloud Storage)         |
+| **Authentication**       | Django Session-based  | JWT (stateless) + Google OAuth 2.0                 |
+| **Architecture**         | Monolithic            | Microservices                                      |
+| **Caching**              | Not implemented       | Redis (in-memory caching)                          |
+| **Database Indexing**    | Not implemented       | Indexed key tables for optimized query performance |
+| **Virtual Try-On**       | Not implemented       | CatVTON model via the fal.ai platform              |
+| **Logging & Monitoring** | Not implemented       | Grafana Loki + Dashboards for log aggregation      |
 
 ---
 
-## 🛠️ Technical Enhancements
+## 🧑‍💻 Frontend Highlights – Built with Next.js & Tailwind CSS
 
-### FastAPI over Django
+The frontend was completely re-engineered in **Version 2.0** using **Next.js with TypeScript** and **Tailwind CSS**, offering a modern, responsive, and performant UI. Key improvements:
 
-- Transitioned to FastAPI for asynchronous processing and real-time interactions.
-- Provides automatic OpenAPI documentation and faster response handling.
+- **Server-side rendering** for faster initial load times and SEO benefits.
+- **Tailwind CSS** for utility-first, maintainable styling.
+- **Dynamic outfit filtering** and search for quick discovery.
+- **Virtual Try-On** integration with the backend.
+- **Mobile-first** design approach for an optimized user experience across devices.
 
-### Prisma ORM over Django ORM
+This revamp replaces the basic HTML, CSS, and JS used in the first version.
 
-- Type-safe queries and schema modeling.
-- Easier management of wardrobe data, user collections, and outfit combinations.
+---
+
+## ⚙️ Backend Enhancements – Powered by FastAPI, Prisma, and GCP
+
+### FastAPI
+
+- Asynchronous, high-performance API framework.
+- Auto-generates OpenAPI (Swagger) docs.
+- Fast response times and better scalability.
+
+### Prisma ORM
+
+- Type-safe and auto-generated client.
+- Simple schema definitions and DB migrations.
+- Clean data modeling for users, items, and outfit combinations.
 
 ### PostgreSQL + Neon Serverless
 
-- Upgraded from SQLite to PostgreSQL for better concurrency and scalability.
-- Used **Neon Serverless PostgreSQL** for dynamic auto-scaling and cost savings.
+- Replaces SQLite with serverless PostgreSQL for scalability.
+- Auto-scaling capabilities to handle fluctuating traffic.
 
 ### Redis Caching
 
-- Integrated Redis to reduce database load.
-- Improved browsing speed through efficient caching.
+- Speeds up browsing and reduces backend load.
+- Cached filters, outfits, and frequently queried data.
 
-### Cloud Infrastructure
+### Cloud Infrastructure on GCP
 
-- Moved deployment to **Google Cloud Platform**, utilizing:
+- Cloud VMs for compute.
+- Cloud Storage for static/media assets.
+- Enables CI/CD and scalable deployments.
 
-  - Cloud VMs for scalable compute resources.
-  - Cloud Storage for reliable image/media management.
+### Authentication System
 
-### Scalable Authentication
-
-- Migrated from Django's session-based auth to **JWT** for stateless security.
-- Added **Google Authentication (OAuth 2.0)** for seamless login.
+- Stateless JWT-based authentication.
+- Integrated Google OAuth 2.0 for SSO.
+- Scalable and secure.
 
 ### Virtual Try-On
 
-- Introduced visualization of outfits to boost user engagement.
+- Powered by the **CatVTON model** via [fal.ai](https://fal.ai).
+- Users can visualize outfits directly in the app.
 
-### Database Indexing
+### Observability with Grafana Loki
 
-- Indexed critical tables (user data, wardrobe items, virtual try-on results).
-- Improved performance for searches, recommendations, and history tracking.
-
-### Grafana Loki for Log Aggregation
-
-- Integrated **Grafana Loki** for centralized and structured log aggregation across all microservices.
-- Enabled **real-time log monitoring** to streamline debugging and system observability.
-- Paired with **Grafana dashboards** to visualize logs, monitor system health, and set alerting rules.
+- Real-time logs and system health monitoring.
+- Debug and analyze across microservices.
 
 ---
 
-## 💡 System Design & Architecture
+## 🧱 System Architecture
 
-- Refactored into **microservices**, enabling independent scaling of components.
-- Structured for horizontal scalability and fault tolerance.
-
----
-
-## 📈 Project Outcomes
-
-- **40% faster API responses** with async processing and caching.
-- **Improved database performance** with Prisma & PostgreSQL.
-- **Highly scalable cloud architecture** with GCP + Neon.
-- **Immersive user experience** through Virtual Try-On.
-- **Secure, scalable authentication** using JWT & Google SSO.
-- Improved observability and debugging through Grafana Loki log aggregation.
+- Microservices-based design for modularity and scalability.
+- Stateless services with dedicated caching, logging, and storage layers.
+- Cloud-optimized deployment with environment-based configurations.
 
 ---
 
-## 🌿 Sustainability Mission
+## 📊 Performance Gains
 
-Virtual Wardrobe empowers users to:
-
-- Track and manage clothing items.
-- Make informed fashion decisions.
-- Embrace a minimal, sustainable lifestyle through technology.
+- **40% faster API responses** via async FastAPI and Redis caching.
+- **Improved data management** with Prisma and PostgreSQL.
+- **Seamless authentication** and smoother login flows.
+- **Faster page loads** and enhanced frontend responsiveness.
+- **Better debugging** and monitoring with centralized logging.
 
 ---
 
-## 🔗 Connect
+## 🌱 Sustainability Mission
 
-If you're interested in exploring or contributing to the project, feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/anirudh248) or check out the codebase here on GitHub!
+**Virtual Wardrobe** empowers users to:
+
+- Track their fashion inventory.
+- Make mindful decisions around purchases.
+- Embrace a minimal, sustainable lifestyle through intelligent recommendations and outfit planning.
+
+---
+
+## 🔗 Connect & Contribute
+
+If you're interested in exploring or contributing to the project:
+
+- 📬 [Connect on LinkedIn](https://www.linkedin.com/in/anirudh248)
+- 💻 View the full codebase on [GitHub](https://github.com/orgs/VirtualWardrobe/repositories)
