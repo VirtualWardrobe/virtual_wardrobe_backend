@@ -120,12 +120,12 @@ enum ItemCategory {
 
   // Bottoms
   PANT
-  JEAN
-  SHORT
+  JEANS
+  SHORTS
   SKIRT
-  LEGGING
-  SWEATPANT
-  TROUSER
+  LEGGINGS
+  SWEATPANTS
+  TROUSERS
 
   // Outerwear
   JACKET
@@ -136,14 +136,13 @@ enum ItemCategory {
 
   // Formal wear
   SUIT
-  DRESS
-  FORMAL_SHIRT
+  TUXEDO
 
   // Innerwear/Sleepwear
   INNERWEAR
-  PAJAMA
+  PAJAMAS
   ROBE
-  SOCK
+  SOCKS
   UNDERWEAR
 
   // Activewear
