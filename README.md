@@ -15,7 +15,7 @@ The **Virtual Wardrobe Backend** is a high-performance, scalable API built with 
 | Architecture         | Monolithic      | Microservices                                      |
 | Caching              | Not Implemented | Redis (in-memory caching)                          |
 | Database Indexing    | Not Implemented | Indexed tables for optimized query performance     |
-| Virtual Try-On       | Not Implemented | CatVTON model via [fal.ai](https://fal.ai)         |
+| Virtual Try-on       | Not Implemented | Virtual Try-on API (Vertex AI)                     |
 | Logging & Monitoring | Not Implemented | Grafana Loki + Dashboards for real-time monitoring |
 
 ---
@@ -56,9 +56,9 @@ The **Virtual Wardrobe Backend** is a high-performance, scalable API built with 
 - Integrated Google OAuth 2.0 for SSO.
 - Scalable and secure.
 
-### Virtual Try-On
+### Virtual Try-on
 
-- Powered by the **CatVTON model** via [fal.ai](https://fal.ai).
+- Powered by the virtual try-on API provided by Vertex AI.
 - Users can visualize outfits directly in the app.
 
 ### Observability with Grafana Loki

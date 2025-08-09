@@ -81,15 +81,15 @@ model Contact {
 }
 
 model VirtualTryOn {
-  id                String    @id @default(uuid())
+  id                String     @id @default(uuid())
   user_id           String
   human_image_url   String
   garment_image_url String
-  cloth_type        ClothType
+  cloth_type        ClothType?
   result_image_url  String
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  user              User      @relation(fields: [user_id], references: [id])
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  user              User       @relation(fields: [user_id], references: [id])
 
   @@index([user_id], name: "virtual_try_on_user_id_index")
   @@index([id, user_id], name: "virtual_try_on_id_user_id_index")

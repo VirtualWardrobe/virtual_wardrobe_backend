@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from typing import Optional
 from prisma import Prisma
-from prisma.enums import ClothType
 from app.db.prisma_client import get_prisma
 from app.redis.redis_client import redis_handler
 from app.api.v1.user.auth.routes.user import get_current_user
 from app.cloud.gcp.storage import upload_file_to_gcs
 from app.utils.success_handler import success_response
+from app.cloud.gcp.vertexai import run_virtual_tryon
 from env import env
-import logging, fal_client, math, json
+import logging, math, json, base64
 
 
 router = APIRouter()
@@ -16,7 +16,6 @@ router = APIRouter()
 
 @router.post("/virtual-tryon")
 async def virtual_tryon(
-    cloth_type: ClothType,
     human_image: UploadFile = File(...),
     garment_image: UploadFile = File(...),
     prisma: Prisma = Depends(get_prisma),
@@ -25,45 +24,44 @@ async def virtual_tryon(
     try:
         data = {
             "user_id": user.id,
-            "cloth_type": cloth_type
         }
 
-        file_name = human_image.filename
-        file_content = await human_image.read()
+        human_bytes = await human_image.read()
+        garment_bytes = await garment_image.read()
+
         human_image_url = await upload_file_to_gcs(
-            file=file_content,
+            file=human_bytes,
             bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
             folder_name="virtual-tryon/human",
             content_type=human_image.content_type,
-            filename=file_name
+            filename=human_image.filename
         )
-        data["human_image_url"] = human_image_url
-
-        file_name = garment_image.filename
-        file_content = await garment_image.read()
         garment_image_url = await upload_file_to_gcs(
-            file=file_content,
+            file=garment_bytes,
             bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
             folder_name="virtual-tryon/garment",
             content_type=garment_image.content_type,
-            filename=file_name
+            filename=garment_image.filename
         )
+
+        data["human_image_url"] = human_image_url
         data["garment_image_url"] = garment_image_url
 
-        result_image = fal_client.subscribe(
-            "fal-ai/cat-vton",
-            arguments={
-                "human_image_url": human_image_url,
-                "garment_image_url": garment_image_url,
-                "cloth_type": cloth_type.lower()
-            },
-            with_logs=True
+        generated_image_b64 = await run_virtual_tryon(human_bytes, garment_bytes)
+
+        generated_image_bytes = base64.b64decode(generated_image_b64)
+        result_image_url = await upload_file_to_gcs(
+            file=generated_image_bytes,
+            bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+            folder_name="virtual-tryon/results",
+            content_type="image/png",
+            filename=f"tryon_result_{user.id}.png"
         )
-        data["result_image_url"] = result_image["image"]["url"]
+
+        data["result_image_url"] = result_image_url
 
         async with prisma.tx(timeout=65000, max_wait=80000) as tx:
-            result = await tx.virtualtryon.create(data=data)
-
+            result = await tx.virtualtryon.create(data=data)      
             redis_client = await redis_handler.get_client()
             virtual_tryon_keys = await redis_client.keys(f'virtual_tryon_{user.id}_*')
             user_info_keys = await redis_client.keys(f'user_info_{user.id}')
@@ -104,10 +102,7 @@ async def get_virtual_tryon(
             )
 
         skip = (page - 1) * page_size
-
-        filters = {
-            "user_id": user.id
-        }
+        filters = {"user_id": user.id}
 
         results = await prisma.virtualtryon.find_many(
             where=filters,

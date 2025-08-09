@@ -94,7 +94,7 @@ app.include_router(google_auth_router, prefix="/api/v1", tags=["Google Auth"])
 app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
 app.include_router(item_router, prefix="/api/v1", tags=["Wardrobe Items"])
 app.include_router(contact_router, prefix="/api/v1", tags=["Contacts"])
-app.include_router(virtual_tryon_router, prefix="/api/v1", tags=["Virtual Try-On"])
+app.include_router(virtual_tryon_router, prefix="/api/v1", tags=["Virtual Try-on"])
 
 @app.get("/")
 async def root():
