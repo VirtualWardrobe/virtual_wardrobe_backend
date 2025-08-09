@@ -78,9 +78,6 @@ async def run_virtual_tryon(human_bytes: bytes, garment_bytes: bytes):
         
         return base64.b64encode(image_bytes).decode("utf-8")
 
-    except HTTPException:
-        raise
-
     except Exception as e:
         logger.error("Error calling Vertex AI Virtual Try-on: %s", e, exc_info=True)
         raise HTTPException(
