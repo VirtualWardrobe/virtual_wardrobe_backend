@@ -83,7 +83,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://virtualwardrobe.in"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://virtualwardrobe.in",
+        "https://backend.virtualwardrobe.in"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
