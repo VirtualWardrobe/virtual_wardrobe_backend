@@ -8,16 +8,15 @@ from app.api.v1.user.auth.routes.user import get_current_user
 from prisma import Prisma
 from prisma.enums import Role
 from env import env
-import logging, json
-
+import logging
+import json
 
 router = APIRouter()
 
 
 @router.get("/user", status_code=status.HTTP_200_OK)
 async def get_user_info(
-    prisma: Prisma = Depends(get_prisma),
-    current_user=Depends(get_current_user)
+    prisma: Prisma = Depends(get_prisma), current_user=Depends(get_current_user)
 ):
     try:
         cache_key = f"user_info_{current_user.id}"
@@ -27,28 +26,22 @@ async def get_user_info(
         if cached_user:
             return success_response(
                 message="User information retrieved from cache",
-                data=json.loads(cached_user)
+                data=json.loads(cached_user),
             )
 
         user = await prisma.user.find_first(
             where={"id": current_user.id, "is_deleted": False},
-            include={
-                "VirtualTryOn": {
-                    "order_by": {"created_at": "desc"},
-                    "take": 3
-                }
-            }
+            include={"VirtualTryOn": {"order_by": {"created_at": "desc"}, "take": 3}},
         )
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_dict = user.model_dump(mode='json')
+        user_dict = user.model_dump(mode="json")
         await redis_client.setex(cache_key, 3600, json.dumps(user_dict))
 
         return success_response(
-            message="User information retrieved successfully",
-            data=user
+            message="User information retrieved successfully", data=user
         )
 
     except HTTPException as he:
@@ -74,7 +67,7 @@ async def update_user(
     is_phone_verified: Optional[bool] = None,
     is_google_verified: Optional[bool] = None,
     prisma: Prisma = Depends(get_prisma),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     try:
         data = {}
@@ -100,13 +93,13 @@ async def update_user(
         if delete_profile_pic:
             await delete_file_from_gcs(
                 file_url=current_user.profile_pic,
-                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET
+                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
             )
             data["profile_pic"] = None
 
         if phone_number is not None:
             data["phone_number"] = phone_number
-        
+
         if profile_pic:
             file_name = profile_pic.filename
             file_content = await profile_pic.read()
@@ -115,23 +108,19 @@ async def update_user(
                 bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
                 folder_name="user-profile-pics",
                 content_type=profile_pic.content_type,
-                filename=file_name
+                filename=file_name,
             )
             data["profile_pic"] = file_url
 
         async with prisma.tx(timeout=65000, max_wait=80000) as tx:
             updated_user = await tx.user.update(
-                where={"id": current_user.id, "is_deleted": False},
-                data=data
+                where={"id": current_user.id, "is_deleted": False}, data=data
             )
 
             redis_client = await redis_handler.get_client()
             await redis_client.delete(f"user_info_{current_user.id}")
 
-        return success_response(
-            message="User updated successfully",
-            data=updated_user
-        )
+        return success_response(message="User updated successfully", data=updated_user)
 
     except HTTPException as he:
         logging.error("HTTPException in update_user: %s", he)
@@ -144,14 +133,12 @@ async def update_user(
 
 @router.delete("/user", status_code=status.HTTP_200_OK)
 async def delete_user(
-    prisma: Prisma = Depends(get_prisma),
-    current_user=Depends(get_current_user)
+    prisma: Prisma = Depends(get_prisma), current_user=Depends(get_current_user)
 ):
     try:
         async with prisma.tx(timeout=65000, max_wait=80000) as tx:
             await tx.user.update(
-                where={"id": current_user.id},
-                data={"is_deleted": True}
+                where={"id": current_user.id}, data={"is_deleted": True}
             )
 
             redis_client = await redis_handler.get_client()

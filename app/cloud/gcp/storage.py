@@ -1,4 +1,9 @@
-import uuid, logging, re, httpx, anyio.to_thread, base64
+import uuid
+import logging
+import re
+import httpx
+import anyio.to_thread
+import base64
 from google.cloud import storage
 from fastapi import status, HTTPException
 from urllib.parse import urlparse, unquote
@@ -10,6 +15,7 @@ from env import env
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def decode(encoded_string: str) -> Optional[str]:
     """
     Decode a URL-safe base64 string back to original format.
@@ -17,13 +23,14 @@ def decode(encoded_string: str) -> Optional[str]:
     try:
         padding_needed = len(encoded_string) % 4
         if padding_needed:
-            encoded_string += '=' * (4 - padding_needed)
-        encoded_bytes = encoded_string.encode('ascii')
+            encoded_string += "=" * (4 - padding_needed)
+        encoded_bytes = encoded_string.encode("ascii")
         decoded_bytes = base64.urlsafe_b64decode(encoded_bytes)
-        return decoded_bytes.decode('utf-8')
+        return decoded_bytes.decode("utf-8")
     except Exception as e:
         logger.error("Error decoding string: %s", e)
         return None
+
 
 # Service account info
 service_account_info = {
@@ -37,18 +44,37 @@ service_account_info = {
     "token_uri": "https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url": env.GCP_CLIENT_X509_CERT_URL,
-    "universe_domain": "googleapis.com"
+    "universe_domain": "googleapis.com",
 }
 
 storage_client = storage.Client.from_service_account_info(service_account_info)
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf", "webp", "svg", "mp3", "wav", "ogg", "aac"}
+ALLOWED_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "pdf",
+    "webp",
+    "svg",
+    "mp3",
+    "wav",
+    "ogg",
+    "aac",
+}
+
 
 def is_allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-async def upload_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optional[str] = None,
-                             content_type: Optional[str] = None, filename: Optional[str] = None) -> str:
+
+async def upload_file_to_gcs(
+    file: bytes,
+    bucket_name: str,
+    folder_name: Optional[str] = None,
+    content_type: Optional[str] = None,
+    filename: Optional[str] = None,
+) -> str:
     try:
         bucket = storage_client.bucket(bucket_name)
         unique_key = str(uuid.uuid4())
@@ -66,7 +92,9 @@ async def upload_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optiona
             object_name = object_key
 
         blob = bucket.blob(object_name)
-        await anyio.to_thread.run_sync(lambda: blob.upload_from_string(file, content_type=content_type))
+        await anyio.to_thread.run_sync(
+            lambda: blob.upload_from_string(file, content_type=content_type)
+        )
 
         file_url = f"https://storage.googleapis.com/{bucket_name}/{object_name}"
         return file_url
@@ -78,16 +106,25 @@ async def upload_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optiona
             detail=f"Error uploading file to GCS: {str(e)}",
         )
 
+
 async def upload_image_from_url(image_url: str, bucket_name: str) -> str:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(image_url)
             if response.status_code != status.HTTP_200_OK:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unable to fetch image from URL")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Unable to fetch image from URL",
+                )
             if not response.content:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No image content to upload")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No image content to upload",
+                )
 
-        file_url = await upload_file_to_gcs(file=response.content, bucket_name=bucket_name, content_type="image/png")
+        file_url = await upload_file_to_gcs(
+            file=response.content, bucket_name=bucket_name, content_type="image/png"
+        )
         return file_url
 
     except HTTPException as http_ex:
@@ -100,8 +137,13 @@ async def upload_image_from_url(image_url: str, bucket_name: str) -> str:
             detail=f"Error uploading image from URL: {str(e)}",
         )
 
-async def upload_audio_file_to_gcs(file: bytes, bucket_name: str, folder_name: Optional[str] = None,
-                                   content_type: Optional[str] = None) -> str:
+
+async def upload_audio_file_to_gcs(
+    file: bytes,
+    bucket_name: str,
+    folder_name: Optional[str] = None,
+    content_type: Optional[str] = None,
+) -> str:
     try:
         if content_type and not content_type.startswith("audio/"):
             raise HTTPException(
@@ -127,6 +169,7 @@ async def upload_audio_file_to_gcs(file: bytes, bucket_name: str, folder_name: O
             detail=f"Error uploading audio file to GCS: {str(e)}",
         )
 
+
 async def delete_file_from_gcs(file_url: str, bucket_name: str) -> dict:
     try:
         bucket_name, object_key = parse_gcs_url(file_url)
@@ -135,7 +178,9 @@ async def delete_file_from_gcs(file_url: str, bucket_name: str) -> dict:
 
         exists = await anyio.to_thread.run_sync(blob.exists)
         if not exists:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in GCS")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found in GCS"
+            )
 
         await anyio.to_thread.run_sync(blob.delete)
         return {"message": "File deleted successfully"}
@@ -149,6 +194,7 @@ async def delete_file_from_gcs(file_url: str, bucket_name: str) -> dict:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting file from GCS: {str(e)}",
         )
+
 
 def parse_gcs_url(gcs_url: str) -> Tuple[str, str]:
     try:
@@ -179,6 +225,7 @@ def parse_gcs_url(gcs_url: str) -> Tuple[str, str]:
         logger.error("Error parsing GCS URL '%s': %s", gcs_url, str(e))
         raise ValueError(f"Error parsing GCS URL: {str(e)}")
 
+
 async def generate_signed_url(gcs_url: str, expires_in: int = 3600) -> str:
     try:
         bucket_name, object_key = parse_gcs_url(gcs_url)
@@ -187,9 +234,7 @@ async def generate_signed_url(gcs_url: str, expires_in: int = 3600) -> str:
 
         signed_url = await anyio.to_thread.run_sync(
             lambda: blob.generate_signed_url(
-                version="v4",
-                expiration=expires_in,
-                method="GET"
+                version="v4", expiration=expires_in, method="GET"
             )
         )
 
@@ -199,21 +244,24 @@ async def generate_signed_url(gcs_url: str, expires_in: int = 3600) -> str:
     except Exception as e:
         logger.error("Error generating signed URL for %s: %s", gcs_url, str(e))
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
 
 def is_gcs_url(url: str) -> bool:
     if not url or len(url) == 0:
         return False
     return "storage.googleapis.com" in url or url.startswith("gs://")
 
-async def generate_pdf_upload_signed_url(bucket_name: str, filename: str, expires_in: int = 900) -> Tuple[str, str]:
+
+async def generate_pdf_upload_signed_url(
+    bucket_name: str, filename: str, expires_in: int = 900
+) -> Tuple[str, str]:
     try:
-        if not is_allowed_file(filename) or not filename.lower().endswith('.pdf'):
+        if not is_allowed_file(filename) or not filename.lower().endswith(".pdf"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid filename. Only PDF files are allowed."
+                detail="Invalid filename. Only PDF files are allowed.",
             )
 
         unique_key = str(uuid.uuid4())
@@ -227,7 +275,7 @@ async def generate_pdf_upload_signed_url(bucket_name: str, filename: str, expire
                 version="v4",
                 expiration=timedelta(seconds=expires_in),
                 method="PUT",
-                content_type="application/pdf"
+                content_type="application/pdf",
             )
         )
 
@@ -238,5 +286,5 @@ async def generate_pdf_upload_signed_url(bucket_name: str, filename: str, expire
         logger.error("Error generating signed URL for PDF upload: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating signed URL: {str(e)}"
+            detail=f"Error generating signed URL: {str(e)}",
         )

@@ -5,8 +5,8 @@ from app.api.v1.contacts.models import Contact
 from app.api.v1.user.auth.routes.user import get_current_user
 from app.utils.success_handler import success_response
 from app.db.prisma_client import get_prisma
-import logging, math
-
+import logging
+import math
 
 router = APIRouter()
 
@@ -15,20 +15,17 @@ router = APIRouter()
 async def create_contact(
     contact: Contact,
     prisma: Prisma = Depends(get_prisma),
-    user = Depends(get_current_user)
+    _user=Depends(get_current_user),
 ):
     try:
         data = contact.model_dump(exclude_unset=True)
 
-        created_contact = await prisma.contact.create(
-            data=data
-        )
+        created_contact = await prisma.contact.create(data=data)
 
         return success_response(
-            message="Message sent successfully",
-            data=created_contact
+            message="Message sent successfully", data=created_contact
         )
-    
+
     except HTTPException as httpx:
         logging.error("HTTPException: %s", httpx)
         raise httpx
@@ -43,19 +40,16 @@ async def get_contacts(
     prisma: Prisma = Depends(get_prisma),
     page: Optional[int] = Query(1, ge=1),
     page_size: Optional[int] = Query(10, ge=1, le=100),
-    user = Depends(get_current_user)
+    _user=Depends(get_current_user),
 ):
     try:
         skip = (page - 1) * page_size
-        
-        contacts = await prisma.contact.find_many(
-            skip=skip,
-            take=page_size
-        )
-        
+
+        contacts = await prisma.contact.find_many(skip=skip, take=page_size)
+
         total_count = await prisma.contact.count()
         total_pages = math.ceil(total_count / page_size)
-        
+
         return success_response(
             message="Messages retrieved successfully",
             data={
@@ -66,11 +60,11 @@ async def get_contacts(
                     "total_items": total_count,
                     "total_pages": total_pages,
                     "has_next": page < total_pages,
-                    "has_previous": page > 1
-                }
-            }
+                    "has_previous": page > 1,
+                },
+            },
         )
-    
+
     except HTTPException as httpx:
         logging.error("HTTPException: %s", httpx)
         raise httpx

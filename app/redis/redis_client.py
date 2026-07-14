@@ -8,6 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_t
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class RedisClientManager:
     def __init__(self):
         self.client: Optional[redis.Redis] = None
@@ -15,17 +16,24 @@ class RedisClientManager:
     @retry(
         stop=stop_after_attempt(10),
         wait=wait_fixed(30),
-        retry=retry_if_exception_type((
-            redis.ConnectionError,
-            redis.AuthenticationError,
-            redis.TimeoutError,
-        )),
+        retry=retry_if_exception_type(
+            (
+                redis.ConnectionError,
+                redis.AuthenticationError,
+                redis.TimeoutError,
+            )
+        ),
         before=lambda retry_state: logger.warning(
             "Retrying Redis connection attempt %d...", retry_state.attempt_number
         ),
-        after=lambda retry_state: logger.error(
-            "Failed to connect to Redis after %d attempts", retry_state.attempt_number
-        ) if retry_state.outcome.failed else None
+        after=lambda retry_state: (
+            logger.error(
+                "Failed to connect to Redis after %d attempts",
+                retry_state.attempt_number,
+            )
+            if retry_state.outcome.failed
+            else None
+        ),
     )
     async def _connect_with_retry(self) -> redis.Redis:
         """
@@ -38,7 +46,7 @@ class RedisClientManager:
                 port=int(env.REDIS_PORT),
                 password=env.REDIS_PASSWORD,
                 db=0,
-                decode_responses=True
+                decode_responses=True,
             )
             await client.ping()
             logger.info("Successfully connected to Redis")
@@ -79,6 +87,7 @@ class RedisClientManager:
         if self.client is None:
             await self.connect()
         return self.client
+
 
 # Create singleton instance
 redis_handler = RedisClientManager()

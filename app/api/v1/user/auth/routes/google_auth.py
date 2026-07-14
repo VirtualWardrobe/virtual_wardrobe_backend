@@ -7,8 +7,8 @@ from app.redis.redis_client import redis_handler
 from typing import Optional
 from app.api.v1.user.auth.routes.user import create_access_token
 from env import env
-import httpx, logging
-
+import httpx
+import logging
 
 router = APIRouter()
 
@@ -26,23 +26,22 @@ async def google_login():
             "response_type": "code",
             "scope": "openid email profile",
             "redirect_uri": env.GOOGLE_REDIRECT_URI,
-            "prompt": "select_account"
+            "prompt": "select_account",
         }
         url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
-        return success_response(message="Redirecting to Google login", data={"google_auth_url": url})
+        return success_response(
+            message="Redirecting to Google login", data={"google_auth_url": url}
+        )
 
     except HTTPException as he:
         logging.error("HTTPException during Google login: %s", he)
         raise he
 
     except Exception as e:
-        error_code = getattr(e, 'code', 500)
-        error_code = getattr(e, 'status_code', error_code)
+        error_code = getattr(e, "code", 500)
+        error_code = getattr(e, "status_code", error_code)
         logging.error("Error Code: %s, Message: %s", error_code, str(e), exc_info=True)
-        raise HTTPException(
-            status_code=error_code,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=error_code, detail=str(e))
 
 
 @router.get("/google/callback")
@@ -64,7 +63,11 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
             response = await client.post(GOOGLE_TOKEN_URL, data=data)
 
         if response.status_code != 200:
-            logging.error("Failed to retrieve token from Google. Status: %s, Response: %s", response.status_code, response.text)
+            logging.error(
+                "Failed to retrieve token from Google. Status: %s, Response: %s",
+                response.status_code,
+                response.text,
+            )
             redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
             return RedirectResponse(url=redirect_url)
 
@@ -72,51 +75,59 @@ async def google_callback(code: Optional[str] = None, error: Optional[str] = Non
 
         async with httpx.AsyncClient() as client:
             user_info_response = await client.get(
-                GOOGLE_USERINFO_URL,
-                headers={"Authorization": f"Bearer {access_token}"}
+                GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
             )
 
         if user_info_response.status_code != 200:
-            logging.error("Failed to fetch user info from Google. Status: %s, Response: %s", user_info_response.status_code, user_info_response.text)
+            logging.error(
+                "Failed to fetch user info from Google. Status: %s, Response: %s",
+                user_info_response.status_code,
+                user_info_response.text,
+            )
             redirect_url = f"{env.FRONT_END_RESPONSE_URI}?success=false"
             return RedirectResponse(url=redirect_url)
 
         user_info = user_info_response.json()
         prisma = await get_prisma()
 
-        user_exist = await prisma.user.find_first(where={"email": user_info['email']})
+        user_exist = await prisma.user.find_first(where={"email": user_info["email"]})
 
         if user_exist:
             if user_exist.is_deleted:
-                redirect_url = str(env.FRONT_END_RESPONSE_URI) + '?' + str(urlencode({
-                    'success': 'false',
-                    'email': user_exist.email
-                }))
+                redirect_url = (
+                    str(env.FRONT_END_RESPONSE_URI)
+                    + "?"
+                    + str(urlencode({"success": "false", "email": user_exist.email}))
+                )
                 return RedirectResponse(url=redirect_url)
 
             if not user_exist.is_google_verified:
                 user_exist = await prisma.user.update(
-                    where={"id": user_exist.id},
-                    data={"is_google_verified": True}
+                    where={"id": user_exist.id}, data={"is_google_verified": True}
                 )
         else:
-            user_exist = await prisma.user.create(data={
-                "name": user_info['name'],
-                "email": user_info['email'],
-                "is_email_verified": True,
-                "is_google_verified": True
-            })
+            user_exist = await prisma.user.create(
+                data={
+                    "name": user_info["name"],
+                    "email": user_info["email"],
+                    "is_email_verified": True,
+                    "is_google_verified": True,
+                }
+            )
 
         cache_key = f"user_info_{user_exist.id}"
         redis_client = await redis_handler.get_client()
         await redis_client.delete(cache_key)
 
-        access_token = create_access_token(data={"email": user_exist.email, "id": user_exist.id})
+        access_token = create_access_token(
+            data={"email": user_exist.email, "id": user_exist.id}
+        )
 
-        redirect_url = str(env.FRONT_END_RESPONSE_URI) + '?' + str(urlencode({
-            'success': 'true',
-            'access_token': access_token
-        }))
+        redirect_url = (
+            str(env.FRONT_END_RESPONSE_URI)
+            + "?"
+            + str(urlencode({"success": "true", "access_token": access_token}))
+        )
         return RedirectResponse(url=redirect_url)
 
     except httpx.HTTPStatusError as e:

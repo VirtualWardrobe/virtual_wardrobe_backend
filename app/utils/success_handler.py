@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+
 def success_response(message: str, data: Optional[Any] = None) -> dict:
     """
     Generate a success response dictionary.

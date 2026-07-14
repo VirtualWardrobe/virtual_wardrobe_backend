@@ -1,6 +1,7 @@
 from typing import Optional
 from prisma import Prisma
 
+
 class PrismaClient:
     _instance: Optional[Prisma] = None
 
@@ -16,6 +17,7 @@ class PrismaClient:
         if PrismaClient._instance is not None:
             await PrismaClient._instance.disconnect()
             PrismaClient._instance = None
+
 
 async def get_prisma():
     """Get Prisma client instance"""

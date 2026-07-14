@@ -1,4 +1,5 @@
-import logging, os
+import logging
+import os
 from logging.handlers import TimedRotatingFileHandler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,6 @@ from app.api.v1.contacts.routes import router as contact_router
 from app.api.v1.virtual_tryon.routes import router as virtual_tryon_router
 from env import env
 
-
 # Configure logging
 
 LOG_DIR = env.LOG_DIR
@@ -23,11 +23,7 @@ LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 file_handler = TimedRotatingFileHandler(
-    LOG_PATH,
-    when='midnight',
-    interval=1,
-    backupCount=7,
-    encoding='utf-8'
+    LOG_PATH, when="midnight", interval=1, backupCount=7, encoding="utf-8"
 )
 
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
@@ -37,10 +33,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 stream_handler.setLevel(logging.INFO)
 
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[file_handler, stream_handler]
-)
+logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +47,7 @@ logger.info("Logging is set up correctly.")
 
 
 # Initialize FastAPI application and include routers
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -74,11 +68,12 @@ async def lifespan(_app: FastAPI):
     logger.info("Shutting down Redis client")
     await redis_handler.disconnect()
 
+
 app = FastAPI(
     title="Virtual Wardrobe Backend",
     description="API for managing all operations",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -86,7 +81,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://virtualwardrobe.in",
-        "https://backend.virtualwardrobe.in"
+        "https://backend.virtualwardrobe.in",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -99,6 +94,7 @@ app.include_router(user_info_router, prefix="/api/v1", tags=["User Info"])
 app.include_router(item_router, prefix="/api/v1", tags=["Wardrobe Items"])
 app.include_router(contact_router, prefix="/api/v1", tags=["Contacts"])
 app.include_router(virtual_tryon_router, prefix="/api/v1", tags=["Virtual Try-on"])
+
 
 @app.get("/")
 async def root():
