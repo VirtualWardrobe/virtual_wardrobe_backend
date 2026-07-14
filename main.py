@@ -80,8 +80,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://virtualwardrobe.in",
-        "https://backend.virtualwardrobe.in",
+        "https://virtualwardrobe.space",
+        "https://backend.virtualwardrobe.space",
     ],
     allow_credentials=True,
     allow_methods=["*"],
