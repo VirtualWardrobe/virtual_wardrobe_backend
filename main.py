@@ -72,7 +72,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="Virtual Wardrobe Backend",
     description="API for managing all operations",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
