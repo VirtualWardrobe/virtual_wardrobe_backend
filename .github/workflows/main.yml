@@ -1,0 +1,44 @@
+name: 🚀 Deploy FastAPI App to GCP Compute Engine
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Connect to GCP Compute Engine and Deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCP_HOST }}
+          username: ${{ secrets.GCP_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.PROJECT_DIR }}
+
+            echo "🔄 Resuming FastAPI screen session..."
+
+            echo "🛑 Stopping existing Uvicorn process..."
+            screen -r fastapi -X stuff $'\003'
+            sleep 2
+
+            echo "📦 Pulling latest changes..."
+            screen -r fastapi -X stuff "git pull origin main\n"
+
+            echo "📚 Installing dependencies..."
+            screen -r fastapi -X stuff "pip install -r requirements.txt\n"
+
+            echo "🔧 Running Prisma commands..."
+            screen -r fastapi -X stuff "prisma generate\n"
+            screen -r fastapi -X stuff "prisma db push\n"
+
+            echo "🚀 Restarting FastAPI server..."
+            screen -r fastapi -X stuff "uvicorn main:app --reload --host 0.0.0.0 --port 8000\n"
+
+            echo "✅ Deployment to GCP Compute Engine completed successfully."
