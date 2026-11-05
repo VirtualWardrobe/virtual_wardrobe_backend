@@ -41,4 +41,4 @@ jobs:
             echo "🚀 Restarting FastAPI server..."
             screen -r fastapi -X stuff "uvicorn main:app --reload --host 0.0.0.0 --port 8000\n"
 
-            echo "✅ Deployment to GCP Compute Engine completed successfully."
+            echo "✅ Deployment to AWS EC2 completed successfully."
