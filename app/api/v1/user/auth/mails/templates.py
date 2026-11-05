@@ -71,7 +71,7 @@ def sign_up_template(OTP) -> str:
         <body>
             <div class="container">
                 <div class="logo">
-                    <img src="https://storage.googleapis.com/virtual-wardrobe-media-bucket/mail-logo.png" alt="Virtual Wardrobe Logo">
+                    <img src="https://virtualwardrobe-media-bucket.s3.ap-south-1.amazonaws.com/mail-logo.jpeg" alt="Virtual Wardrobe Logo">
                 </div>
                 <div class="content">
                     <h2>Verify Your Account</h2>
@@ -168,7 +168,7 @@ def forgot_password_template(OTP) -> str:
         <body>
             <div class="container">
                 <div class="logo">
-                    <img src="https://storage.googleapis.com/virtual-wardrobe-media-bucket/mail-logo.png" alt="Virtual Wardrobe Logo">
+                    <img src="https://virtualwardrobe-media-bucket.s3.ap-south-1.amazonaws.com/mail-logo.jpeg" alt="Virtual Wardrobe Logo">
                 </div>
                 <div class="content">
                     <h2>Verify Your Account</h2>

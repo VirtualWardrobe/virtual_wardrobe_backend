@@ -1,4 +1,4 @@
-name: 🚀 Deploy FastAPI App to GCP Compute Engine
+name: 🚀 Deploy FastAPI App to AWS EC2
 
 on:
   push:
@@ -13,12 +13,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Connect to GCP Compute Engine and Deploy
+      - name: Connect to AWS EC2 and Deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.GCP_HOST }}
-          username: ${{ secrets.GCP_USER }}
-          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.PROJECT_DIR }}
 

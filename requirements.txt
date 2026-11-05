@@ -12,3 +12,4 @@ slowapi
 bcrypt
 google-cloud-storage
 google-cloud-aiplatform
+boto3
