@@ -28,6 +28,7 @@ class Environment:
     REDIS_PORT: str = os.getenv("VW_REDIS_PORT")
     REDIS_PASSWORD: str = os.getenv("VW_REDIS_PASSWORD")
     LOG_DIR: str = os.getenv("VW_LOG_DIR")
+    CLOUD_PROVIDER: str = os.getenv("VW_CLOUD_PROVIDER").strip().upper()
 
     @classmethod
     def to_dict(cls):
@@ -37,5 +38,25 @@ class Environment:
             if not key.startswith("__")
         }
 
+    @classmethod
+    def get_media_bucket(cls) -> str:
+        if cls.CLOUD_PROVIDER == "GCP":
+            bucket = cls.GOOGLE_STORAGE_MEDIA_BUCKET
+        elif cls.CLOUD_PROVIDER == "AWS":
+            bucket = cls.AWS_S3_MEDIA_BUCKET
+        else:
+            raise ValueError(
+                "VW_CLOUD_PROVIDER must be either 'GCP' or 'AWS'"
+            )
+
+        if not bucket:
+            raise ValueError(
+                f"Media bucket is not configured for cloud provider {cls.CLOUD_PROVIDER}"
+            )
+        return bucket
+
+
+if Environment.CLOUD_PROVIDER not in {"GCP", "AWS"}:
+    raise ValueError("VW_CLOUD_PROVIDER must be either 'GCP' or 'AWS'")
 
 env = Environment()

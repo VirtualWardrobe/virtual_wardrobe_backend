@@ -4,10 +4,8 @@ from prisma import Prisma
 from app.db.prisma_client import get_prisma
 from app.redis.redis_client import redis_handler
 from app.api.v1.user.auth.routes.user import get_current_user
-from app.cloud.gcp.storage import upload_file_to_gcs
+from app.cloud.storage import get_media_bucket, upload_file
 from app.utils.success_handler import success_response
-from app.cloud.gcp.vertexai import run_virtual_tryon
-from env import env
 import logging
 import math
 import json
@@ -31,16 +29,16 @@ async def virtual_tryon(
         human_bytes = await human_image.read()
         garment_bytes = await garment_image.read()
 
-        human_image_url = await upload_file_to_gcs(
+        human_image_url = await upload_file(
             file=human_bytes,
-            bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+            bucket_name=get_media_bucket(),
             folder_name="virtual-tryon/human",
             content_type=human_image.content_type,
             filename=human_image.filename,
         )
-        garment_image_url = await upload_file_to_gcs(
+        garment_image_url = await upload_file(
             file=garment_bytes,
-            bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+            bucket_name=get_media_bucket(),
             folder_name="virtual-tryon/garment",
             content_type=garment_image.content_type,
             filename=garment_image.filename,
@@ -49,12 +47,14 @@ async def virtual_tryon(
         data["human_image_url"] = human_image_url
         data["garment_image_url"] = garment_image_url
 
+        from app.cloud.gcp.vertexai import run_virtual_tryon
+
         generated_image_b64 = await run_virtual_tryon(human_bytes, garment_bytes)
 
         generated_image_bytes = base64.b64decode(generated_image_b64)
-        result_image_url = await upload_file_to_gcs(
+        result_image_url = await upload_file(
             file=generated_image_bytes,
-            bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+            bucket_name=get_media_bucket(),
             folder_name="virtual-tryon/results",
             content_type="image/png",
             filename=f"tryon_result_{user.id}.png",

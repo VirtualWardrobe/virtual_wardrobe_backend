@@ -5,9 +5,8 @@ from prisma.enums import ItemCategory, ItemType, Size, Color
 from app.db.prisma_client import PrismaClient
 from app.redis.redis_client import redis_handler
 from app.api.v1.user.auth.routes.user import get_current_user
-from app.cloud.gcp.storage import upload_file_to_gcs, delete_file_from_gcs
+from app.cloud.storage import delete_file, get_media_bucket, upload_file
 from app.utils.success_handler import success_response
-from env import env
 import logging
 import math
 import json
@@ -39,9 +38,9 @@ async def create_wardrobe_items(
         if image:
             file_name = image.filename
             file_content = await image.read()
-            file_url = await upload_file_to_gcs(
+            file_url = await upload_file(
                 file=file_content,
-                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+                bucket_name=get_media_bucket(),
                 folder_name="wardrobe-items",
                 content_type=image.content_type,
                 filename=file_name,
@@ -214,15 +213,15 @@ async def update_wardrobe_item(
             data["color"] = item_color
 
         if image:
-            await delete_file_from_gcs(
+            await delete_file(
                 file_url=existing_item.image_url,
-                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+                bucket_name=get_media_bucket(),
             )
             file_name = image.filename
             file_content = await image.read()
-            file_url = await upload_file_to_gcs(
+            file_url = await upload_file(
                 file=file_content,
-                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+                bucket_name=get_media_bucket(),
                 folder_name="wardrobe-items",
                 content_type=image.content_type,
                 filename=file_name,
@@ -265,9 +264,9 @@ async def delete_wardrobe_item(
             raise HTTPException(status_code=404, detail="Wardrobe item not found")
 
         if existing_item.image_url:
-            await delete_file_from_gcs(
+            await delete_file(
                 file_url=existing_item.image_url,
-                bucket_name=env.GOOGLE_STORAGE_MEDIA_BUCKET,
+                bucket_name=get_media_bucket(),
             )
 
         async with prisma.tx(timeout=65000, max_wait=80000) as tx:
