@@ -58,7 +58,8 @@ The **Virtual Wardrobe Backend** is a high-performance, scalable API built with 
 
 ### Virtual Try-on
 
-- Powered by the virtual try-on API provided by Vertex AI.
+- Supports virtual outfit visualization through cloud-based AI services.
+- Configurable cloud providers and media storage enable flexible deployments.
 - Users can visualize outfits directly in the app.
 
 ### Observability with Grafana Loki
