@@ -6,7 +6,6 @@ from app.redis.redis_client import redis_handler
 from app.api.v1.user.auth.routes.user import get_current_user
 from app.cloud.storage import get_media_bucket, upload_file
 from app.utils.success_handler import success_response
-from app.cloud.virtual_tryon import run_virtual_tryon
 import logging
 import math
 import json
@@ -19,10 +18,6 @@ router = APIRouter()
 async def virtual_tryon(
     human_image: UploadFile = File(...),
     garment_image: UploadFile = File(...),
-    garment_type: str = Query(
-        "UPPER_BODY",
-        pattern="^(UPPER_BODY|LOWER_BODY|FULL_BODY|FOOTWEAR)$",
-    ),
     prisma: Prisma = Depends(get_prisma),
     user=Depends(get_current_user),
 ):
@@ -52,9 +47,9 @@ async def virtual_tryon(
         data["human_image_url"] = human_image_url
         data["garment_image_url"] = garment_image_url
 
-        generated_image_b64 = await run_virtual_tryon(
-            human_bytes, garment_bytes, garment_type
-        )
+        from app.cloud.gcp.vertexai import run_virtual_tryon
+
+        generated_image_b64 = await run_virtual_tryon(human_bytes, garment_bytes)
 
         generated_image_bytes = base64.b64decode(generated_image_b64)
         result_image_url = await upload_file(

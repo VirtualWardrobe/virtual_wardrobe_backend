@@ -57,9 +57,7 @@ def encode_image_to_base64(file_bytes: bytes) -> str:
     return base64.b64encode(file_bytes).decode("utf-8")
 
 
-async def run_virtual_tryon(
-    human_bytes: bytes, garment_bytes: bytes, garment_type: str = "UPPER_BODY"
-):
+async def run_virtual_tryon(human_bytes: bytes, garment_bytes: bytes):
     try:
         logger.info("Sending request to Vertex AI Virtual Try-on model...")
 
